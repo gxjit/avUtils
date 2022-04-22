@@ -74,8 +74,8 @@ def parseArgs():
         "--qVideo",
         default=None,
         type=str,
-        help="Video Quality(CRF) setting; lower is better, avc:23:17-28, hevc:28:20-32"
-        "(defaults:: avc: 28, hevc: 32)",
+        help="Video Quality(CRF) setting; avc:23:17-28, hevc:28:20-32; "
+        "lower means less compression, (defaults:: avc: 28, hevc: 30)",
     )
     parser.add_argument(
         "-s",
@@ -403,7 +403,7 @@ def selectCodec(codec, quality=None, speed=None):
             "-preset:v",
             "medium" if speed is None else speed,
             "-crf",
-            "32" if quality is None else quality,
+            "30" if quality is None else quality,
         ]
 
     return cdc
