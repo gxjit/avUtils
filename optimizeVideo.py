@@ -70,6 +70,14 @@ def parseArgs():
         help="Limit video frame rate; can be 24, 25, 30, 60, etc.(default: 24)",
     )
     parser.add_argument(
+        "-qv",
+        "--qVideo",
+        default=None,
+        type=str,
+        help="Video Quality(CRF) setting; lower is better, avc:23:17-28, hevc:28:20-32"
+        "(defaults:: avc: 28, hevc: 32)",
+    )
+    parser.add_argument(
         "-s",
         "--speed",
         default=None,
@@ -78,16 +86,16 @@ def parseArgs():
         "(defaults:: avc: slow, hevc: medium)(use ultrafast for testing)",
     )
     parser.add_argument(
-        "-a",
-        "--audio",
+        "-ca",
+        "--cAudio",
         default="opus",
         type=aCodec,
         help='Select an audio codec from AAC LC: "aac", HE-AAC: "he" and Opus: "opus".'
         "(default: opus)",
     )
     parser.add_argument(
-        "-v",
-        "--video",
+        "-cv",
+        "--cVideo",
         default="hevc",
         type=vCodec,
         help='Select a video codec from HEVC/H265: "hevc" and AVC/H264: "avc".'
@@ -473,8 +481,8 @@ for idx, file in enumerate(fileList):
     if float(Fraction(vdoInParams["r_frame_rate"])) < fps:
         fps = vdoInParams["r_frame_rate"]
 
-    ca = selectCodec(pargs.audio)
-    cv = selectCodec(pargs.video, speed=pargs.speed)
+    ca = selectCodec(pargs.cAudio)
+    cv = selectCodec(pargs.cVideo, quality=pargs.qVideo, speed=pargs.speed)
     cmd = getffmpegCmd(ffmpegPath, file, tmpFile, cv, ca, res, fps)
 
     printNLog(logFile, f"\n{shJoin(cmd)}")
