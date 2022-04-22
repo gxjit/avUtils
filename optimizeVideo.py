@@ -10,7 +10,7 @@ from shlex import join as shJoin
 from shutil import which as shWhich
 from statistics import fmean
 from subprocess import run
-from sys import exit
+from sys import exit, version_info
 from time import sleep, time
 from traceback import format_exc
 from itertools import chain
@@ -271,11 +271,6 @@ def getParams(metaData, strm, params):
     return paramDict
 
 
-basicMeta = lambda metaData, strm: getParams(
-    metaData, strm, ["codec_type", "codec_name", "profile", "duration", "bit_rate"]
-)
-
-
 def getMeta(metaData, cType):
     params = {}
     for strm in range(2):
@@ -438,19 +433,20 @@ logFile = outDir.joinpath(f"{dirPath.stem}.log")
 printNLogP = partial(printNLog, logFile)
 
 if pargs.recursive:
-    fileList = [f for f in fileList if not f.is_relative_to(outDir)]
+    if version_info >= (3, 9):
+        fileList = [f for f in fileList if not f.is_relative_to(outDir)]
+    fileList = [f for f in fileList if not (str(outDir) in str(f))]
 
 outFileList = getFileList(outDir, [f".{outExt}"])
 
 atexit.register(cleanExit, outDir, tmpFile)
 
-printNLogP(f"\n\n====== Script Started at {now()} ======\n")
+printNLogP(f"\n\n====== {Path(__file__).stem} Started at {now()} ======\n")
 
 totalTime, inSizes, outSizes, lengths = ([] for i in range(4))
 
 for idx, file in enumerate(fileList):
 
-    # outFile = Path(file.parent.joinpath(f"{outDir.name}/{file.stem}.{outExt}"))
     outFile = Path(outDir.joinpath(file.relative_to(dirPath).with_suffix(f".{outExt}")))
 
     statusInfoP = partial(
