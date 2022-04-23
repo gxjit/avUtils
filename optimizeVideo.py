@@ -260,6 +260,81 @@ getffmpegCmd = lambda ffmpegPath, file, outFile, cv, ca, res, fps: [
 ]
 
 
+def selectCodec(codec, quality=None, speed=None):
+
+    if codec == "aac":
+        cdc = [
+            "libfdk_aac",
+            "-b:a",
+            "72k" if quality is None else quality,
+            "-afterburner",
+            "1",
+            "-cutoff",
+            "15500",
+            "-ar",
+            "32000",
+        ]
+        # fdk_aac defaults to a LPF cutoff around 14k
+        # https://wiki.hydrogenaud.io/index.php?title=Fraunhofer_FDK_AAC#Bandwidth
+
+    elif codec == "he":
+        cdc = [
+            "libfdk_aac",
+            "-profile:a",
+            "aac_he",
+            "-b:a",
+            "56k" if quality is None else quality,
+            "-afterburner",
+            "1",
+        ]
+        # mono he-aac encodes are reported as stereo
+        # https://trac.ffmpeg.org/ticket/3361
+
+    elif codec == "opus":
+        cdc = [
+            "libopus",
+            "-b:a",
+            "48k" if quality is None else quality,
+            "-vbr",
+            "on",
+            "-compression_level",
+            "10",
+            "-frame_duration",
+            "20",
+        ]
+
+    elif codec == "avc":
+        cdc = [
+            "libx264",
+            "-preset:v",
+            "slow" if speed is None else speed,
+            "-crf",
+            "28" if quality is None else quality,
+            "-profile:v",
+            "high",
+        ]
+
+    elif codec == "hevc":
+        cdc = [
+            "libx265",
+            "-preset:v",
+            "medium" if speed is None else speed,
+            "-crf",
+            "30" if quality is None else quality,
+        ]
+
+    # elif codec == "av1":
+    #     cdc = [
+    #         "libsvtav1",
+    #         "-crf",
+    #         "52" if quality is None else quality,
+    #         "-preset:v",
+    #         "8" if speed is None else speed,
+    #     ] # -g 240 or keyint based on fps for svt-av1
+
+    return cdc
+
+
 def getMetaData(ffprobePath, currFile, logFile):
     ffprobeCmd = getffprobeCmd(ffprobePath, currFile)
     cmdOut = runCmd(ffprobeCmd, currFile, logFile)
@@ -341,72 +416,6 @@ def compareDur(sourceDur, outDur, strmType, logFile):
             f"durations({str(round2(diff))} seconds) is more than {str(n)} second(s).\n"
         )
         printNLog(logFile, msg)
-
-
-def selectCodec(codec, quality=None, speed=None):
-
-    if codec == "aac":
-        cdc = [
-            "libfdk_aac",
-            "-b:a",
-            "72k" if quality is None else quality,
-            "-afterburner",
-            "1",
-            "-cutoff",
-            "15500",
-            "-ar",
-            "32000",
-        ]
-        # fdk_aac defaults to a LPF cutoff around 14k
-        # https://wiki.hydrogenaud.io/index.php?title=Fraunhofer_FDK_AAC#Bandwidth
-
-    elif codec == "he":
-        cdc = [
-            "libfdk_aac",
-            "-profile:a",
-            "aac_he",
-            "-b:a",
-            "56k" if quality is None else quality,
-            "-afterburner",
-            "1",
-        ]
-        # mono he-aac encodes are reported as stereo
-        # https://trac.ffmpeg.org/ticket/3361
-
-    elif codec == "opus":
-        cdc = [
-            "libopus",
-            "-b:a",
-            "48k" if quality is None else quality,
-            "-vbr",
-            "on",
-            "-compression_level",
-            "10",
-            "-frame_duration",
-            "20",
-        ]
-
-    elif codec == "avc":
-        cdc = [
-            "libx264",
-            "-preset:v",
-            "slow" if speed is None else speed,
-            "-crf",
-            "28" if quality is None else quality,
-            "-profile:v",
-            "high",
-        ]
-
-    elif codec == "hevc":
-        cdc = [
-            "libx265",
-            "-preset:v",
-            "medium" if speed is None else speed,
-            "-crf",
-            "30" if quality is None else quality,
-        ]
-
-    return cdc
 
 
 ffprobePath, ffmpegPath = checkPaths(
