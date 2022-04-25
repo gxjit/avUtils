@@ -32,7 +32,7 @@ def parseArgs():
             raise argparse.ArgumentTypeError("Invalid Codec")
 
     aCodec = partial(checkCodec, codecs=["opus", "he", "aac"])
-    vCodec = partial(checkCodec, codecs=["avc", "hevc"])
+    vCodec = partial(checkCodec, codecs=["avc", "hevc", "av1", "vp9"])
 
     parser = argparse.ArgumentParser(
         description="Optimize Video/Audio files by encoding to avc/hevc/aac/opus."
@@ -63,9 +63,9 @@ def parseArgs():
         help="Limit video resolution; can be 360, 480, 540, 720, etc.(default: 540)",
     )
     parser.add_argument(
-        "-f",
+        "-fr",
         "--fps",
-        default=24,
+        default=30,
         type=int,
         help="Limit video frame rate; can be 24, 25, 30, 60, etc.(default: 24)",
     )
@@ -74,7 +74,8 @@ def parseArgs():
         "--qVideo",
         default=None,
         type=str,
-        help="Video Quality(CRF) setting; avc:23:17-28, hevc:28:20-32; "
+        help="Video Quality(CRF) setting; avc:23:17-28, hevc:28:20-32, "
+        "av1:50:0-63 and VP9:31:15-44"
         "lower means less compression, (defaults:: avc: 28, hevc: 30)",
     )
     parser.add_argument(
@@ -82,8 +83,9 @@ def parseArgs():
         "--speed",
         default=None,
         type=str,
-        help="Encoding speed; can be slow, medium, fast, veryfast, etc."
-        "(defaults:: avc: slow, hevc: medium)(use ultrafast for testing)",
+        help="Encoding speed; avc & hevc: slow, medium, fast, veryfast, ultrafast etc; "
+        "av1: 0-13 vp9: 0-4 (lower is slower and efficient); "
+        "(defaults:: avc: slow, hevc: medium, av1: 8, vp9: 3)",
     )
     parser.add_argument(
         "-ca",
@@ -98,8 +100,8 @@ def parseArgs():
         "--cVideo",
         default="hevc",
         type=vCodec,
-        help='Select a video codec from HEVC/H265: "hevc" and AVC/H264: "avc".'
-        "(default: hevc)",
+        help='Select a video codec from HEVC/H265: "hevc", AVC/H264: "avc", '
+        'AV1: "av1" and VP9: "vp9". (default: hevc)',
     )
     return parser.parse_args()
 
@@ -323,14 +325,35 @@ def selectCodec(codec, quality=None, speed=None):
             "30" if quality is None else quality,
         ]
 
-    # elif codec == "av1":
-    #     cdc = [
-    #         "libsvtav1",
-    #         "-crf",
-    #         "52" if quality is None else quality,
-    #         "-preset:v",
-    #         "8" if speed is None else speed,
-    #     ] # -g 240 or keyint based on fps for svt-av1
+    elif codec == "av1":
+        cdc = [
+            "libsvtav1",
+            "-crf",
+            "50" if quality is None else quality,
+            "-preset:v",
+            "8" if speed is None else speed,
+            "-g",
+            "240",
+        ]  # -g fps*10
+
+    elif codec == "vp9":
+        cdc = [
+            "libvpx-vp9",
+            "-crf",
+            "44" if quality is None else quality,
+            "-b:v",
+            "0",
+            "-quality",
+            "good",
+            "-speed",
+            "3" if speed is None else speed,
+            "-g",  # fps*10
+            "240",
+            "-tile-columns",
+            "1",  # 1 for 720p, 2 for 1080p, 3 for 2160p etc
+            "-row-mt",
+            "1",
+        ]  # prefer 2 pass for HQ vp9 encodes
 
     return cdc
 
@@ -452,7 +475,8 @@ printNLogP = partial(printNLog, logFile)
 if pargs.recursive:
     if version_info >= (3, 9):
         fileList = [f for f in fileList if not f.is_relative_to(outDir)]
-    fileList = [f for f in fileList if not (str(outDir) in str(f))]
+    else:
+        fileList = [f for f in fileList if not (str(outDir) in str(f))]
 
 outFileList = getFileList(outDir, [f".{outExt}"])
 
@@ -577,5 +601,6 @@ for idx, file in enumerate(fileList):
 
 # H264: medium efficiency, fast encoding, widespread support
 # > H265: high efficiency, slow encoding, medicore support
+# > VP9: same as h265, less support than h265, little suppport in apple ecosystem
 # > AV1: higher efficiency, slow encoding, little to no support
 # libopus > fdk_aac SBR > fdk_aac >= vorbis > libmp3lame > ffmpeg aac
