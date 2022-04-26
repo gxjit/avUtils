@@ -32,7 +32,7 @@ def parseArgs():
             raise argparse.ArgumentTypeError("Invalid Codec")
 
     aCodec = partial(checkCodec, codecs=["opus", "he", "aac"])
-    vCodec = partial(checkCodec, codecs=["avc", "hevc", "av1", "vp9"])
+    vCodec = partial(checkCodec, codecs=["avc", "hevc", "av1"])
 
     parser = argparse.ArgumentParser(
         description="Optimize Video/Audio files by encoding to avc/hevc/aac/opus."
@@ -41,7 +41,7 @@ def parseArgs():
         "-d", "--dir", required=True, help="Directory path", type=dirPath
     )
     parser.add_argument(
-        "-re",
+        "-r",
         "--recursive",
         action="store_true",
         help="Process files recursively in all child directories.",
@@ -56,7 +56,7 @@ def parseArgs():
         help="Wait time in seconds between each iteration, default is 10",
     )
     parser.add_argument(
-        "-r",
+        "-rs",
         "--res",
         default=540,
         type=int,
@@ -67,16 +67,15 @@ def parseArgs():
         "--fps",
         default=30,
         type=int,
-        help="Limit video frame rate; can be 24, 25, 30, 60, etc.(default: 24)",
+        help="Limit video frame rate; can be 24, 25, 30, 60, etc.(default: 30)",
     )
     parser.add_argument(
         "-qv",
         "--qVideo",
         default=None,
         type=str,
-        help="Video Quality(CRF) setting; avc:23:17-28, hevc:28:20-32, "
-        "av1:50:0-63 and VP9:31:15-44"
-        "lower means less compression, (defaults:: avc: 28, hevc: 30)",
+        help="Video Quality(CRF) setting; avc:23:17-28, hevc:28:20-32 and av1:50:0-63"
+        "lower crf means less compression, (defaults:: avc: 28, hevc: 30 and av1: 52)",
     )
     parser.add_argument(
         "-s",
@@ -84,24 +83,24 @@ def parseArgs():
         default=None,
         type=str,
         help="Encoding speed; avc & hevc: slow, medium, fast, veryfast, ultrafast etc; "
-        "av1: 0-13 vp9: 0-4 (lower is slower and efficient); "
-        "(defaults:: avc: slow, hevc: medium, av1: 8, vp9: 3)",
+        "av1: 0-13/6-8 (lower is slower and efficient); "
+        "(defaults:: avc: slow, hevc: medium and av1: 8)",
     )
     parser.add_argument(
         "-ca",
         "--cAudio",
-        default="opus",
+        default="he",
         type=aCodec,
         help='Select an audio codec from AAC LC: "aac", HE-AAC: "he" and Opus: "opus".'
-        "(default: opus)",
+        "(default: he)",
     )
     parser.add_argument(
         "-cv",
         "--cVideo",
         default="hevc",
         type=vCodec,
-        help='Select a video codec from HEVC/H265: "hevc", AVC/H264: "avc", '
-        'AV1: "av1" and VP9: "vp9". (default: hevc)',
+        help='Select a video codec from HEVC/H265: "hevc", AVC/H264: "avc" and '
+        'AV1: "av1". (default: hevc)',
     )
     return parser.parse_args()
 
@@ -329,31 +328,31 @@ def selectCodec(codec, quality=None, speed=None):
         cdc = [
             "libsvtav1",
             "-crf",
-            "50" if quality is None else quality,
+            "52" if quality is None else quality,
             "-preset:v",
             "8" if speed is None else speed,
             "-g",
             "240",
         ]  # -g fps*10
 
-    elif codec == "vp9":
-        cdc = [
-            "libvpx-vp9",
-            "-crf",
-            "44" if quality is None else quality,
-            "-b:v",
-            "0",
-            "-quality",
-            "good",
-            "-speed",
-            "3" if speed is None else speed,
-            "-g",  # fps*10
-            "240",
-            "-tile-columns",
-            "1",  # 1 for 720p, 2 for 1080p, 3 for 2160p etc
-            "-row-mt",
-            "1",
-        ]  # prefer 2 pass for HQ vp9 encodes
+    # elif codec == "vp9":
+    #     cdc = [
+    #         "libvpx-vp9",
+    #         "-crf",
+    #         "42" if quality is None else quality,
+    #         "-b:v",
+    #         "0",
+    #         "-quality",
+    #         "good",
+    #         "-speed",
+    #         "3" if speed is None else speed,
+    #         "-g",  # fps*10
+    #         "240",
+    #         "-tile-columns",
+    #         "1",  # 1 for 720p, 2 for 1080p, 3 for 2160p etc
+    #         "-row-mt",
+    #         "1",
+    #     ]  # prefer 2 pass for HQ vp9 encodes
 
     return cdc
 
