@@ -1,19 +1,34 @@
 import argparse
 import atexit
-from datetime import datetime, timedelta
 from fractions import Fraction
 from functools import partial
 from json import loads as jLoads
-from os import mkdir
 from pathlib import Path
 from shlex import join as shJoin
-from shutil import which as shWhich
 from statistics import fmean
 from subprocess import run
 from sys import exit, version_info
-from time import sleep, time
+from time import time
 from traceback import format_exc
-from itertools import chain
+
+from modules.helpers import (
+    bytesToMB,
+    dynWait,
+    fileDTime,
+    now,
+    round2,
+    secsToHMS,
+    timeNow,
+)
+from modules.io import waitN
+from modules.fs import (
+    getFileList,
+    getFileListRec,
+    makeTargetDirs,
+    rmEmptyDirs,
+    appendFile,
+)
+from modules.os import checkPaths
 
 
 def parseArgs():
@@ -112,91 +127,6 @@ def parseArgs():
     return parser.parse_args()
 
 
-fileDTime = lambda: datetime.now().strftime("%y%m%d-%H%M%S")
-
-secsToHMS = lambda sec: str(timedelta(seconds=sec)).split(".")[0]
-
-round2 = partial(round, ndigits=2)
-
-bytesToMB = lambda bytes: round2(bytes / float(1 << 20))
-
-now = lambda: str(datetime.now()).split(".")[0]
-
-timeNow = lambda: str(datetime.now().time()).split(".")[0]
-
-dynWait = lambda secs, n=7.5: secs / n
-
-
-def waitN(n):
-    print("\n")
-    for i in reversed(range(0, n)):
-        print(
-            f"Waiting for {str(i).zfill(3)} seconds.", end="\r", flush=True
-        )  # padding for clearing digits left from multi digit coundown
-        sleep(1)
-    print("\r")
-
-
-def makeTargetDirs(dirPath, names):
-    retNames = []
-    for name in names:
-        newPath = dirPath.joinpath(name)
-        if not newPath.exists():
-            mkdir(newPath)
-        retNames.append(newPath)
-    return retNames
-
-
-def checkPaths(paths):
-    retPaths = []
-    for path, absPath in paths.items():
-        retPath = shWhich(path)
-        if isinstance(retPath, type(None)) and not isinstance(absPath, type(None)):
-            retPaths.append(absPath)
-        else:
-            retPaths.append(retPath)
-    return retPaths
-
-
-def getInput():
-    print("\nPress Enter Key continue or input 'e' to exit.")
-    try:
-        choice = input("\n> ")
-        if choice not in ["e", ""]:
-            raise ValueError
-
-    except ValueError:
-        print("\nInvalid input.")
-        choice = getInput()
-
-    return choice
-
-
-def getFileSizes(fileList):
-    totalSize = 0
-    for file in fileList:
-        totalSize += file.stat().st_size
-    return totalSize
-
-
-def rmEmptyDirs(paths):
-    for path in paths:
-        if not list(path.iterdir()):
-            path.rmdir()
-
-
-def appendFile(file, contents):
-    # if not file.exists():
-    #     file.touch()
-    with open(file, "a") as f:
-        f.write(str(contents))
-
-
-def readFile(file):
-    with open(file, "r") as f:
-        return f.read()
-
-
 def printNLog(logFile, msg):
     print(str(msg))
     appendFile(logFile, msg)
@@ -227,13 +157,24 @@ def runCmd(cmd, currFile, logFile):
     return cmdOut
 
 
-getFileList = lambda dirPath, exts: [
-    f for f in dirPath.iterdir() if f.is_file() and f.suffix.lower() in exts
-]
+def statusInfo(status, idx, file, logFile):
+    printNLog(
+        logFile,
+        f"\n----------------\n{status} file {idx}:" f" {str(file.name)} at {timeNow()}",
+    )
 
-getFileListRec = lambda dirPath, exts: list(
-    chain.from_iterable([dirPath.rglob(f"*{ext}") for ext in exts])
-)
+
+def cleanExit(outDir, tmpFile):
+    print("\nPerforming exit cleanup...")
+    if tmpFile.exists():
+        tmpFile.unlink()
+    rmEmptyDirs([outDir])
+
+
+def nothingExit():
+    print("Nothing to do.")
+    exit()
+
 
 getffprobeCmd = lambda ffprobePath, file: [
     ffprobePath,
@@ -259,7 +200,7 @@ getffmpegCmd = lambda ffmpegPath, file, outFile, cv, ca, res, fps: [
     "-r",
     str(fps),
     "-vf",
-    f"scale=-1:{str(res)}",  # *vo
+    f"scale=-2:{str(res)}",  # *vo
     "-c:a",
     *ca,
     "-loglevel",
@@ -375,7 +316,7 @@ def videoOpts(fps, res):
         str(fps),
     ]
     if res is not None:
-        opts = [*opts, "-vf", f"scale=-1:{str(res)}"]
+        opts = [*opts, "-vf", f"scale=-2:{str(res)}"]
     return opts
 
 
@@ -428,25 +369,6 @@ def getMeta(metaData, cType):
 formatParams = lambda params: "".join(
     [f"{param}: {value}; " for param, value in params.items()]
 )
-
-
-def statusInfo(status, idx, file, logFile):
-    printNLog(
-        logFile,
-        f"\n----------------\n{status} file {idx}:" f" {str(file.name)} at {timeNow()}",
-    )
-
-
-def cleanExit(outDir, tmpFile):
-    print("\nPerforming exit cleanup...")
-    if tmpFile.exists():
-        tmpFile.unlink()
-    rmEmptyDirs([outDir])
-
-
-def nothingExit():
-    print("Nothing to do.")
-    exit()
 
 
 def compareDur(sourceDur, outDur, strmType, logFile):
@@ -623,6 +545,7 @@ for idx, file in enumerate(fileList):
 
 # H264: medium efficiency, fast encoding, widespread support
 # > H265: high efficiency, slow encoding, medicore support
-# > VP9: high efficiency, slower encoding, less support than h265, little suppport in apple ecosystem
+# > VP9: high efficiency, slower encoding, less support than h265,
+# very little support on apple stuff
 # > AV1: higher efficiency, slow encoding, little to no support
 # libopus > fdk_aac SBR > fdk_aac >= vorbis > libmp3lame > ffmpeg aac
