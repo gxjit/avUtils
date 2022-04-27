@@ -31,7 +31,7 @@ def parseArgs():
         else:
             raise argparse.ArgumentTypeError("Invalid Codec")
 
-    aCodec = partial(checkCodec, codecs=["opus", "he", "aac"])
+    aCodec = partial(checkCodec, codecs=["opus", "he", "aac", "cp"])
     vCodec = partial(checkCodec, codecs=["avc", "hevc", "av1"])
 
     parser = argparse.ArgumentParser(
@@ -83,8 +83,8 @@ def parseArgs():
         "--cAudio",
         default="he",
         type=aCodec,
-        help='Select an audio codec from AAC-LC: "aac", HE-AAC/AAC-LC with SBR: "he" and Opus: "opus".'
-        "(default: he)",
+        help='Select an audio codec from AAC-LC: "aac", HE-AAC/AAC-LC with SBR: "he" '
+        ', Opus: "opus" and copy audio: "cp".(default: he)',
     )
     parser.add_argument(
         "-cv",
@@ -107,7 +107,7 @@ def parseArgs():
         "--qAudio",
         default=None,
         type=str,
-        help="Audio Quality/bitrate in kbps; (defaults:: opus:48, he:56 and aac:72)"
+        help="Audio Quality/bitrate in kbps; (defaults:: opus:48, he:56 and aac:72)",
     )
     return parser.parse_args()
 
@@ -341,6 +341,9 @@ def selectCodec(codec, quality=None, speed=None):
             "-g",
             "240",
         ]  # -g fps*10
+
+    elif codec == "cp":
+        cdc = ["copy"]
 
     # elif codec == "vp9":
     #     cdc = [
