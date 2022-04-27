@@ -133,11 +133,7 @@ def printNLog(logFile, msg):
 
 
 def swr(currFile, logFile, exp=None):
-    printNLog(
-        logFile,
-        f"\n------\nERROR: Something went wrong while processing following file."
-        f"\n > {str(currFile.name)}.",
-    )
+    printNLog(logFile, "\n------\nERROR: Something went wrong.")
     if exp and exp.stderr:
         printNLog(logFile, f"\nStdErr: {exp.stderr}\nReturn Code: {exp.returncode}")
     if exp:
@@ -187,20 +183,13 @@ getffprobeCmd = lambda ffprobePath, file: [
     str(file),
 ]
 
-getffmpegCmd = lambda ffmpegPath, file, outFile, cv, ca, res, fps: [
+getffmpegCmd = lambda ffmpegPath, file, outFile, cv, ca, ov: [
     ffmpegPath,
     "-i",
     str(file),
     "-c:v",
     *cv,
-    "-pix_fmt",
-    "yuv420p",
-    "-vsync",
-    "vfr",
-    "-r",
-    str(fps),
-    "-vf",
-    f"scale=-2:{str(res)}",  # *vo
+    *ov,
     "-c:a",
     *ca,
     "-loglevel",
@@ -310,8 +299,10 @@ def selectCodec(codec, quality=None, speed=None):
     return cdc
 
 
-def videoOpts(fps, res):
+def optsVideo(fps, res):
     opts = [
+        "-pix_fmt",
+        "yuv420p",
         "-vsync",
         "vfr",
         "-r",
@@ -453,7 +444,7 @@ for idx, file in enumerate(fileList):
 
     res = pargs.res
     if int(vdoInParams["height"]) < res:
-        res = int(vdoInParams["height"])  # None?
+        res = None
 
     fps = pargs.fps
     if float(Fraction(vdoInParams["r_frame_rate"])) < fps:
@@ -461,8 +452,8 @@ for idx, file in enumerate(fileList):
 
     ca = selectCodec(pargs.cAudio, pargs.qAudio)
     cv = selectCodec(pargs.cVideo, pargs.qVideo, pargs.speed)
-    # vo = videoOpts(pargs.fps, pargs.res)
-    cmd = getffmpegCmd(ffmpegPath, file, tmpFile, cv, ca, res, fps)
+    ov = optsVideo(fps, res)
+    cmd = getffmpegCmd(ffmpegPath, file, tmpFile, cv, ca, ov)
 
     printNLog(logFile, f"\n{shJoin(cmd)}")
     strtTime = time()
