@@ -89,7 +89,7 @@ def parseArgs():
         "--speed",
         default=None,
         type=str,
-        help="Encoding speed; avc & hevc: slow, medium and fast etc; "
+        help="Video encoding speed; avc & hevc: slow, medium and fast etc; "
         "av1: 0-13/6-8 (lower is slower and efficient). "
         "(defaults:: avc: slow, hevc: medium and av1: 8)",
     )
@@ -113,7 +113,7 @@ def parseArgs():
         "-qv",
         "--qVideo",
         default=None,
-        type=str,
+        type=int,
         help="Video Quality(CRF) setting; avc:23:17-28, hevc:28:20-32 and av1:50:0-63, "
         "lower crf means less compression. (defaults:: avc: 28, hevc: 32 and av1: 52)",
     )
@@ -121,7 +121,7 @@ def parseArgs():
         "-qa",
         "--qAudio",
         default=None,
-        type=str,
+        type=int,
         help="Audio Quality/bitrate in kbps; (defaults:: opus: 48, he: 56 and aac: 72)",
     )
     return parser.parse_args()
@@ -211,6 +211,8 @@ getffmpegCmd = lambda ffmpegPath, file, outFile, cv, ca, res, fps: [
 
 def selectCodec(codec, quality=None, speed=None):
 
+    quality = None if quality is None else str(quality)
+
     if codec == "aac":
         cdc = [
             "libfdk_aac",
@@ -236,7 +238,7 @@ def selectCodec(codec, quality=None, speed=None):
             "-afterburner",
             "1",
         ]
-        # mono he-aac encodes are reported as stereo
+        # mono he-aac encodes are reported as stereo by ffmpeg/ffprobe
         # https://trac.ffmpeg.org/ticket/3361
 
     elif codec == "opus":
