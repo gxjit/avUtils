@@ -58,9 +58,9 @@ def parseArgs():
     parser.add_argument(
         "-rs",
         "--res",
-        default=540,
+        default=720,
         type=int,
-        help="Limit video resolution; can be 360, 480, 540, 720, etc.(default: 540)",
+        help="Limit video resolution; can be 360, 480, 540, 720, etc.(default: 720)",
     )
     parser.add_argument(
         "-fr",
@@ -68,14 +68,6 @@ def parseArgs():
         default=30,
         type=int,
         help="Limit video frame rate; can be 24, 25, 30, 60, etc.(default: 30)",
-    )
-    parser.add_argument(
-        "-qv",
-        "--qVideo",
-        default=None,
-        type=str,
-        help="Video Quality(CRF) setting; avc:23:17-28, hevc:28:20-32 and av1:50:0-63"
-        "lower crf means less compression, (defaults:: avc: 28, hevc: 30 and av1: 52)",
     )
     parser.add_argument(
         "-s",
@@ -91,7 +83,7 @@ def parseArgs():
         "--cAudio",
         default="he",
         type=aCodec,
-        help='Select an audio codec from AAC LC: "aac", HE-AAC: "he" and Opus: "opus".'
+        help='Select an audio codec from AAC-LC: "aac", HE-AAC/AAC-LC with SBR: "he" and Opus: "opus".'
         "(default: he)",
     )
     parser.add_argument(
@@ -101,6 +93,21 @@ def parseArgs():
         type=vCodec,
         help='Select a video codec from HEVC/H265: "hevc", AVC/H264: "avc" and '
         'AV1: "av1". (default: hevc)',
+    )
+    parser.add_argument(
+        "-qv",
+        "--qVideo",
+        default=None,
+        type=str,
+        help="Video Quality(CRF) setting; avc:23:17-28, hevc:28:20-32 and av1:50:0-63"
+        "lower crf means less compression, (defaults:: avc: 28, hevc: 32 and av1: 52)",
+    )
+    parser.add_argument(
+        "-qa",
+        "--qAudio",
+        default=None,
+        type=str,
+        help="Audio Quality/bitrate in kbps; (defaults:: opus:48, he:56 and aac:72)"
     )
     return parser.parse_args()
 
@@ -321,7 +328,7 @@ def selectCodec(codec, quality=None, speed=None):
             "-preset:v",
             "medium" if speed is None else speed,
             "-crf",
-            "30" if quality is None else quality,
+            "32" if quality is None else quality,
         ]
 
     elif codec == "av1":
