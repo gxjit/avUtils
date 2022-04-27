@@ -520,7 +520,7 @@ for idx, file in enumerate(fileList):
     if float(Fraction(vdoInParams["r_frame_rate"])) < fps:
         fps = vdoInParams["r_frame_rate"]
 
-    ca = selectCodec(pargs.cAudio)
+    ca = selectCodec(pargs.cAudio, quality=pargs.qAudio)
     cv = selectCodec(pargs.cVideo, quality=pargs.qVideo, speed=pargs.speed)
     cmd = getffmpegCmd(ffmpegPath, file, tmpFile, cv, ca, res, fps)
 
