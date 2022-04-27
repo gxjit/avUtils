@@ -259,7 +259,7 @@ getffmpegCmd = lambda ffmpegPath, file, outFile, cv, ca, res, fps: [
     "-r",
     str(fps),
     "-vf",
-    f"scale=-1:{str(res)}",
+    f"scale=-1:{str(res)}",  # *vo
     "-c:a",
     *ca,
     "-loglevel",
@@ -311,6 +311,9 @@ def selectCodec(codec, quality=None, speed=None):
             "20",
         ]
 
+    elif codec == "cp":
+        cdc = ["copy"]
+
     elif codec == "avc":
         cdc = [
             "libx264",
@@ -342,9 +345,6 @@ def selectCodec(codec, quality=None, speed=None):
             "240",
         ]  # -g fps*10
 
-    elif codec == "cp":
-        cdc = ["copy"]
-
     # elif codec == "vp9":
     #     cdc = [
     #         "libvpx-vp9",
@@ -365,6 +365,18 @@ def selectCodec(codec, quality=None, speed=None):
     #     ]  # prefer 2 pass for HQ vp9 encodes
 
     return cdc
+
+
+def videoOpts(fps, res):
+    opts = [
+        "-vsync",
+        "vfr",
+        "-r",
+        str(fps),
+    ]
+    if res is not None:
+        opts = [*opts, "-vf", f"scale=-1:{str(res)}"]
+    return opts
 
 
 def getMetaData(ffprobePath, currFile, logFile):
@@ -517,14 +529,15 @@ for idx, file in enumerate(fileList):
 
     res = pargs.res
     if int(vdoInParams["height"]) < res:
-        res = int(vdoInParams["height"])
+        res = int(vdoInParams["height"])  # None?
 
     fps = pargs.fps
     if float(Fraction(vdoInParams["r_frame_rate"])) < fps:
         fps = vdoInParams["r_frame_rate"]
 
-    ca = selectCodec(pargs.cAudio, quality=pargs.qAudio)
-    cv = selectCodec(pargs.cVideo, quality=pargs.qVideo, speed=pargs.speed)
+    ca = selectCodec(pargs.cAudio, pargs.qAudio)
+    cv = selectCodec(pargs.cVideo, pargs.qVideo, pargs.speed)
+    # vo = videoOpts(pargs.fps, pargs.res)
     cmd = getffmpegCmd(ffmpegPath, file, tmpFile, cv, ca, res, fps)
 
     printNLog(logFile, f"\n{shJoin(cmd)}")
@@ -610,6 +623,6 @@ for idx, file in enumerate(fileList):
 
 # H264: medium efficiency, fast encoding, widespread support
 # > H265: high efficiency, slow encoding, medicore support
-# > VP9: same as h265, less support than h265, little suppport in apple ecosystem
+# > VP9: high efficiency, slower encoding, less support than h265, little suppport in apple ecosystem
 # > AV1: higher efficiency, slow encoding, little to no support
 # libopus > fdk_aac SBR > fdk_aac >= vorbis > libmp3lame > ffmpeg aac
