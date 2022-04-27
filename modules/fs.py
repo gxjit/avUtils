@@ -1,14 +1,29 @@
-from .helpers import flatten
+from .helpers import flatten, nSort
 from unicodedata import normalize
 from re import sub
+from functools import partial
+from pathlib import Path
+
 
 getFileList = lambda dirPath, exts: [
     f for f in dirPath.iterdir() if f.is_file() and f.suffix.lower() in exts
 ]
 
+getFileListAll = lambda dirPath, exts: [f for f in dirPath.iterdir() if f.is_file()]
+
 getFileListRec = lambda dirPath, exts: list(
     flatten([dirPath.rglob(f"*{ext}") for ext in exts])
 )
+
+# getFileListAllRec = lambda dirPath, exts: list(
+#     flatten([dirPath.rglob("*") for ext in exts])
+# )
+
+getDirList = lambda dirPath: [x for x in dirPath.iterdir() if x.is_dir()]
+
+pathifyList = lambda paths: [Path(x) for x in paths]
+
+stringifyPaths = lambda paths: [str(x) for x in paths]
 
 
 def appendFile(file, contents):
@@ -36,6 +51,12 @@ def rmEmptyDirs(paths):
 
 getFileSizes = lambda fileList: sum([file.stat().st_size for file in fileList])
 
+nPathSort = partial(sorted, key=lambda k: nSort(str(k.stem)))
+# non recursive
+
+deepPathSort = partial(sorted, key=lambda k: nSort(str(f"{k.parent}/{k.name}")))
+# one lvl deep
+
 
 def readFile(file):  # or Path.read_text()
     with open(file, "r") as f:
@@ -56,7 +77,7 @@ def slugify(value, allow_unicode=False):
     return sub(r"[-\s]+", "-", value)
 
 
-def slugifyNReplace(value, replace={}, keepSpace=True):
+def slugifyCustom(value, replace={}, keepSpace=True):
     """
     Adapted from django.utils.text.slugify
     https://docs.djangoproject.com/en/3.0/_modules/django/utils/text/#slugify
@@ -76,8 +97,12 @@ def slugifyNReplace(value, replace={}, keepSpace=True):
     return value
 
 
+# getDirSize, cleanExit
+
 # def getFileSizes(fileList):
 #     totalSize = 0
 #     for file in fileList:
 #         totalSize += file.stat().st_size
 #     return totalSize
+
+# nPathSort = lambda (paths): sorted(paths, key=lambda k: nSort(str(k.stem)))

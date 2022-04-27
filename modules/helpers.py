@@ -26,5 +26,6 @@ fileDTime = lambda: datetime.now().strftime("%y%m%d-%H%M%S")
 def nSort(s, nsre=compile("([0-9]+)")):
     return [int(text) if text.isdigit() else text.lower() for text in nsre.split(s)]
 
-
 dynWait = lambda secs, n=7.5: secs / n
+
+addDots = lambda exts: [f".{x}" for x in exts]

@@ -1,4 +1,5 @@
 from time import sleep
+from sys import exit
 
 
 def waitN(n):
@@ -22,7 +23,8 @@ def getInput():  # add exit() on choice == e
         print("\nInvalid input.")
         choice = getInput()
 
-    return choice
+    if choice == "e":
+        exit()
 
 
 def areYouSure():
