@@ -11,6 +11,13 @@ from sys import exit, version_info
 from time import time
 from traceback import format_exc
 
+from modules.fs import (
+    appendFile,
+    getFileList,
+    getFileListRec,
+    makeTargetDirs,
+    rmEmptyDirs,
+)
 from modules.helpers import (
     bytesToMB,
     dynWait,
@@ -21,13 +28,6 @@ from modules.helpers import (
     timeNow,
 )
 from modules.io import waitN
-from modules.fs import (
-    getFileList,
-    getFileListRec,
-    makeTargetDirs,
-    rmEmptyDirs,
-    appendFile,
-)
 from modules.os import checkPaths
 
 
