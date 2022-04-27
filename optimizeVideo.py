@@ -60,22 +60,22 @@ def parseArgs():
         "--res",
         default=720,
         type=int,
-        help="Limit video resolution; can be 360, 480, 540, 720, etc.(default: 720)",
+        help="Limit video resolution; can be 480, 540, 720, etc. (default: 720)",
     )
     parser.add_argument(
         "-fr",
         "--fps",
         default=30,
         type=int,
-        help="Limit video frame rate; can be 24, 25, 30, 60, etc.(default: 30)",
+        help="Limit video frame rate; can be 24, 25, 30, 60, etc. (default: 30)",
     )
     parser.add_argument(
         "-s",
         "--speed",
         default=None,
         type=str,
-        help="Encoding speed; avc & hevc: slow, medium, fast, veryfast, ultrafast etc; "
-        "av1: 0-13/6-8 (lower is slower and efficient); "
+        help="Encoding speed; avc & hevc: slow, medium and fast etc; "
+        "av1: 0-13/6-8 (lower is slower and efficient). "
         "(defaults:: avc: slow, hevc: medium and av1: 8)",
     )
     parser.add_argument(
@@ -84,7 +84,7 @@ def parseArgs():
         default="he",
         type=aCodec,
         help='Select an audio codec from AAC-LC: "aac", HE-AAC/AAC-LC with SBR: "he" '
-        ', Opus: "opus" and copy audio: "cp".(default: he)',
+        ', Opus: "opus" and copy audio: "cp". (default: he)',
     )
     parser.add_argument(
         "-cv",
@@ -99,15 +99,15 @@ def parseArgs():
         "--qVideo",
         default=None,
         type=str,
-        help="Video Quality(CRF) setting; avc:23:17-28, hevc:28:20-32 and av1:50:0-63"
-        "lower crf means less compression, (defaults:: avc: 28, hevc: 32 and av1: 52)",
+        help="Video Quality(CRF) setting; avc:23:17-28, hevc:28:20-32 and av1:50:0-63, "
+        "lower crf means less compression. (defaults:: avc: 28, hevc: 32 and av1: 52)",
     )
     parser.add_argument(
         "-qa",
         "--qAudio",
         default=None,
         type=str,
-        help="Audio Quality/bitrate in kbps; (defaults:: opus:48, he:56 and aac:72)",
+        help="Audio Quality/bitrate in kbps; (defaults:: opus: 48, he: 56 and aac: 72)",
     )
     return parser.parse_args()
 
