@@ -2,7 +2,6 @@ import argparse
 import atexit
 from fractions import Fraction
 from functools import partial
-from json import loads as jLoads
 from pathlib import Path
 from shlex import join as shJoin
 from statistics import fmean
@@ -14,16 +13,15 @@ from modules.helpers import (
     bytesToMB,
     dynWait,
     fileDTime,
-    now,
-    defVal,
     round2,
     secsToHMS,
-    noNoneCast,
     nothingExit,
 )
-from modules.io import printNLog, reportErr, statusInfo, waitN
+from modules.io import printNLog, reportErr, statusInfo, waitN, startMsg
 from modules.os import checkPaths, runCmd
 from modules.pkgState import setLogFile
+from modules.ffUtils.ffmpeg import getffmpegCmd, selectCodec, optsVideo
+from modules.ffUtils.ffprobe import getMetaData, filterMeta, compareDur, formatParams
 
 
 def parseArgs():
@@ -122,212 +120,6 @@ def parseArgs():
     return parser.parse_args()
 
 
-getffprobeCmd = lambda ffprobePath, file: [
-    ffprobePath,
-    "-v",
-    "quiet",
-    "-print_format",
-    "json",
-    # "-show_format",
-    "-show_streams",
-    str(file),
-]
-
-getffmpegCmd = lambda ffmpegPath, file, outFile, cv, ca, ov: [
-    ffmpegPath,
-    "-i",
-    str(file),
-    "-c:v",
-    *cv,
-    *ov,
-    "-c:a",
-    *ca,
-    "-loglevel",
-    "warning",  # info
-    str(outFile),
-]
-
-
-def selectCodec(codec, quality=None, speed=None):
-
-    # quality = None if quality is None else str(quality)
-    quality = noNoneCast(str, quality)
-
-    if codec == "aac":
-        cdc = [
-            "libfdk_aac",
-            "-b:a",
-            defVal("72k", quality),
-            "-afterburner",
-            "1",
-            "-cutoff",
-            "15500",
-            "-ar",
-            "32000",
-        ]
-        # fdk_aac defaults to a LPF cutoff around 14k
-        # https://wiki.hydrogenaud.io/index.php?title=Fraunhofer_FDK_AAC#Bandwidth
-
-    elif codec == "he":
-        cdc = [
-            "libfdk_aac",
-            "-profile:a",
-            "aac_he",
-            "-b:a",
-            defVal("56k", quality),
-            "-afterburner",
-            "1",
-        ]
-        # mono he-aac encodes are reported as stereo by ffmpeg/ffprobe
-        # https://trac.ffmpeg.org/ticket/3361
-
-    elif codec == "opus":
-        cdc = [
-            "libopus",
-            "-b:a",
-            defVal("48k", quality),
-            "-vbr",
-            "on",
-            "-compression_level",
-            "10",
-            "-frame_duration",
-            "20",
-        ]
-
-    elif codec == "cp":
-        cdc = ["copy"]
-
-    elif codec == "avc":
-        cdc = [
-            "libx264",
-            "-preset:v",
-            "slow" if speed is None else speed,
-            "-crf",
-            defVal("28", quality),
-            "-profile:v",
-            "high",
-        ]
-
-    elif codec == "hevc":
-        cdc = [
-            "libx265",
-            "-preset:v",
-            "medium" if speed is None else speed,
-            "-crf",
-            defVal("32", quality),
-        ]
-
-    elif codec == "av1":
-        cdc = [
-            "libsvtav1",
-            "-crf",
-            defVal("52", quality),
-            "-preset:v",
-            "8" if speed is None else speed,
-            "-g",
-            "240",
-        ]  # -g fps*10
-
-    # elif codec == "vp9":
-    #     cdc = [
-    #         "libvpx-vp9",
-    #         "-crf",
-    #         "42" if quality is None else quality,
-    #         "-b:v",
-    #         "0",
-    #         "-quality",
-    #         "good",
-    #         "-speed",
-    #         "3" if speed is None else speed,
-    #         "-g",  # fps*10
-    #         "240",
-    #         "-tile-columns",
-    #         "1",  # 1 for 720p, 2 for 1080p, 3 for 2160p etc
-    #         "-row-mt",
-    #         "1",
-    #     ]  # prefer 2 pass for HQ vp9 encodes
-
-    return cdc
-
-
-def optsVideo(fps, res):
-    opts = [
-        "-pix_fmt",
-        "yuv420p",
-        "-vsync",
-        "vfr",
-        "-r",
-        str(fps),
-    ]
-    if res is not None:
-        opts = [*opts, "-vf", f"scale=-2:{str(res)}"]
-    return opts
-
-
-def getMetaData(ffprobePath, file):
-    ffprobeCmd = getffprobeCmd(ffprobePath, file)
-    cmdOut = runCmd(ffprobeCmd)
-    if isinstance(cmdOut, Exception):
-        return cmdOut
-    metaData = jLoads(cmdOut)
-    return metaData
-
-
-def getParams(metaData, strm, params):
-    paramDict = {}
-    for param in params:
-        try:
-            paramDict[param] = metaData["streams"][strm][param]
-        except KeyError:
-            paramDict[param] = "N/A"
-    return paramDict
-
-
-def getMeta(metaData, cType):
-    params = {}
-    for strm in range(2):
-        basicMeta = getParams(
-            metaData,
-            strm,
-            ["codec_type", "codec_name", "profile", "duration", "bit_rate"],
-        )
-        if basicMeta["codec_type"] == cType == "audio":  # audio stream
-            params = getParams(
-                metaData,
-                strm,
-                [*basicMeta, "channels", "sample_rate"],
-            )
-        elif basicMeta["codec_type"] == cType == "video":  # video stream
-            params = getParams(
-                metaData,
-                strm,
-                [*basicMeta, "height", "r_frame_rate"],
-            )
-    try:
-        params["bit_rate"] = str(round2(float(params["bit_rate"]) / 1000))
-    except KeyError:
-        pass
-    return params
-
-
-formatParams = lambda params: "".join(
-    [f"{param}: {value}; " for param, value in params.items()]
-)
-
-
-def compareDur(sourceDur, outDur, strmType):
-    diff = abs(float(sourceDur) - float(outDur))
-    n = 1  # < n seconds difference will trigger warning
-    # if diff:
-    #     msg = f"\n\nINFO: Mismatched {strmType} source and output duration."
-    if diff > n:
-        msg = (
-            f"\n********\nWARNING: Differnce between {strmType} source and output "
-            f"durations({str(round2(diff))} seconds) is more than {str(n)} second(s).\n"
-        )
-        printNLog(msg)
-
-
 ffprobePath, ffmpegPath = checkPaths(
     {
         "ffprobe": r"C:\ffmpeg\bin\ffprobe.exe",
@@ -338,6 +130,12 @@ ffprobePath, ffmpegPath = checkPaths(
 formats = [".mp4", ".avi", ".mov", ".mkv"]
 
 outExt = "mp4"
+
+meta = {
+    "basic": ["codec_type", "codec_name", "profile", "duration", "bit_rate"],
+    "audio": ["channels", "sample_rate"],
+    "video": ["height", "r_frame_rate"],
+}
 
 pargs = parseArgs()
 
@@ -370,7 +168,7 @@ outFileList = getFilePaths(outDir, [f".{outExt}"])
 
 atexit.register(cleanUp, [outDir], [tmpFile])
 
-printNLog(f"\n\n====== {Path(__file__).stem} Started at {now()} ======\n")
+startMsg()
 
 totalTime, inSizes, outSizes, lengths = ([] for i in range(4))
 
@@ -391,7 +189,11 @@ for idx, file in enumerate(fileList):
         reportErr(metaData)
         break
 
-    vdoInParams, adoInParams = getMeta(metaData, "video"), getMeta(metaData, "audio")
+    filterMetaP = partial(filterMeta, metaData, basics=meta["basic"])
+
+    vdoInParams, adoInParams = filterMetaP(
+        cdcType="video", xtr=meta["video"]
+    ), filterMetaP(cdcType="audio", xtr=meta["audio"])
 
     res = pargs.res
     if int(vdoInParams["height"]) < res:
@@ -428,7 +230,11 @@ for idx, file in enumerate(fileList):
         reportErr(metaData)
         break
 
-    vdoOutParams, adoOutParams = getMeta(metaData, "video"), getMeta(metaData, "audio")
+    filterMetaP = partial(filterMeta, metaData, basics=meta["basic"])
+
+    vdoOutParams, adoOutParams = filterMetaP(
+        cdcType="video", xtr=meta["video"]
+    ), filterMetaP(cdcType="audio", xtr=meta["audio"])
 
     printNLog(
         f"\nInput:: {formatParams(vdoInParams)}\n{formatParams(adoInParams)}"

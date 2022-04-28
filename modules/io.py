@@ -1,9 +1,11 @@
 from sys import exit
 from time import sleep
 from traceback import format_exc
+from pathlib import Path
+import __main__
 
 from .fs import appendFile
-from .helpers import timeNow
+from .helpers import now, timeNow
 from .pkgState import getLogFile
 
 
@@ -29,6 +31,10 @@ def statusInfo(status, idx, file):
     printNLog(
         f"\n----------------\n{status} file {idx}:" f" {str(file.name)} at {timeNow()}",
     )
+
+
+def startMsg():
+    printNLog(f"\n\n====== {Path(__main__.__file__).stem} Started at {now()} ======\n")
 
 
 def waitN(n):
