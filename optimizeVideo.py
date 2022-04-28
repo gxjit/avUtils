@@ -8,20 +8,20 @@ from statistics import fmean
 from sys import version_info
 from time import time
 
-from modules.fs import getFileList, getFileListRec, makeTargetDirs, cleanUp
+from modules.ffUtils.ffmpeg import getffmpegCmd, optsVideo, selectCodec
+from modules.ffUtils.ffprobe import compareDur, formatParams, getMeta, getMetaData
+from modules.fs import cleanUp, getFileList, getFileListRec, makeTargetDirs
 from modules.helpers import (
     bytesToMB,
     dynWait,
     fileDTime,
+    nothingExit,
     round2,
     secsToHMS,
-    nothingExit,
 )
-from modules.io import printNLog, reportErr, statusInfo, waitN, startMsg
+from modules.io import printNLog, reportErr, startMsg, statusInfo, waitN
 from modules.os import checkPaths, runCmd
 from modules.pkgState import setLogFile
-from modules.ffUtils.ffmpeg import getffmpegCmd, selectCodec, optsVideo
-from modules.ffUtils.ffprobe import getMetaData, filterMeta, compareDur, formatParams
 
 
 def parseArgs():
@@ -189,11 +189,9 @@ for idx, file in enumerate(fileList):
         reportErr(metaData)
         break
 
-    filterMetaP = partial(filterMeta, metaData, basics=meta["basic"])
+    getMetaP = partial(getMeta, metaData, meta)
 
-    vdoInParams, adoInParams = filterMetaP(
-        cdcType="video", xtr=meta["video"]
-    ), filterMetaP(cdcType="audio", xtr=meta["audio"])
+    vdoInParams, adoInParams = getMetaP("video"), getMetaP("audio")
 
     res = pargs.res
     if int(vdoInParams["height"]) < res:
@@ -230,11 +228,9 @@ for idx, file in enumerate(fileList):
         reportErr(metaData)
         break
 
-    filterMetaP = partial(filterMeta, metaData, basics=meta["basic"])
+    getMetaP = partial(getMeta, metaData, meta)
 
-    vdoOutParams, adoOutParams = filterMetaP(
-        cdcType="video", xtr=meta["video"]
-    ), filterMetaP(cdcType="audio", xtr=meta["audio"])
+    vdoOutParams, adoOutParams = getMetaP("video"), getMetaP("audio")
 
     printNLog(
         f"\nInput:: {formatParams(vdoInParams)}\n{formatParams(adoInParams)}"

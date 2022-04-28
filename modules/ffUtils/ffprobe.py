@@ -69,6 +69,10 @@ def filterMeta(metaData, cdcType, basics, xtr=None):
     return params
 
 
+def getMeta(metaData, meta, cdcType):
+    return filterMeta(metaData, cdcType, meta["basic"], meta[cdcType])
+
+
 formatParams = lambda params: "".join(
     [f"{param}: {value}; " for param, value in params.items()]
 )
