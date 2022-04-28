@@ -6,10 +6,10 @@ from json import loads as jLoads
 from pathlib import Path
 from shlex import join as shJoin
 from statistics import fmean
-from sys import exit, version_info
+from sys import version_info
 from time import time
 
-from modules.fs import getFileList, getFileListRec, makeTargetDirs, rmEmptyDirs
+from modules.fs import getFileList, getFileListRec, makeTargetDirs, cleanUp
 from modules.helpers import (
     bytesToMB,
     dynWait,
@@ -19,6 +19,7 @@ from modules.helpers import (
     round2,
     secsToHMS,
     noNoneCast,
+    nothingExit,
 )
 from modules.io import printNLog, reportErr, statusInfo, waitN
 from modules.os import checkPaths, runCmd
@@ -119,18 +120,6 @@ def parseArgs():
         help="Audio Quality/bitrate in kbps; (defaults:: opus: 48, he: 56 and aac: 72)",
     )
     return parser.parse_args()
-
-
-def cleanExit(outDir, tmpFile):
-    print("\nPerforming exit cleanup...")
-    if tmpFile.exists():
-        tmpFile.unlink()
-    rmEmptyDirs([outDir])
-
-
-def nothingExit():
-    print("Nothing to do.")
-    exit()
 
 
 getffprobeCmd = lambda ffprobePath, file: [
@@ -379,7 +368,7 @@ if pargs.recursive:
 
 outFileList = getFilePaths(outDir, [f".{outExt}"])
 
-atexit.register(cleanExit, outDir, tmpFile)
+atexit.register(cleanUp, [outDir], [tmpFile])
 
 printNLog(f"\n\n====== {Path(__file__).stem} Started at {now()} ======\n")
 
@@ -399,6 +388,7 @@ for idx, file in enumerate(fileList):
 
     metaData = getMetaData(ffprobePath, file)
     if isinstance(metaData, Exception):
+        reportErr(metaData)
         break
 
     vdoInParams, adoInParams = getMeta(metaData, "video"), getMeta(metaData, "audio")
@@ -435,6 +425,7 @@ for idx, file in enumerate(fileList):
 
     metaData = getMetaData(ffprobePath, outFile)
     if isinstance(metaData, Exception):
+        reportErr(metaData)
         break
 
     vdoOutParams, adoOutParams = getMeta(metaData, "video"), getMeta(metaData, "audio")

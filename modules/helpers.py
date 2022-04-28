@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from functools import partial
 from itertools import chain
 from re import compile
+from sys import exit
 
 flatten = chain.from_iterable
 
@@ -24,6 +25,11 @@ dateNow = lambda: str(datetime.now().date()).split(".")[0]
 bytesToMB = lambda bytes: round2(bytes / float(1 << 20))
 
 fileDTime = lambda: datetime.now().strftime("%y%m%d-%H%M%S")
+
+
+def nothingExit():
+    print("Nothing to do.")
+    exit()
 
 
 def nSort(s, nsre=compile("([0-9]+)")):

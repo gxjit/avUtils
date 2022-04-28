@@ -25,6 +25,11 @@ pathifyList = lambda paths: [Path(x) for x in paths]
 stringifyPaths = lambda paths: [str(x) for x in paths]
 
 
+def cleanUp(emptyDirs, files):
+    rmEmptyDirs(emptyDirs)
+    rmFiles(files)
+
+
 def appendFile(file, contents):
     # if not file.exists():
     #     file.touch()
@@ -46,6 +51,12 @@ def rmEmptyDirs(paths):
     for path in paths:
         if not list(path.iterdir()):
             path.rmdir()
+
+
+def rmFiles(paths):
+    for path in paths:
+        if path.exists():
+            path.unlink()
 
 
 getFileSizes = lambda fileList: sum([file.stat().st_size for file in fileList])
