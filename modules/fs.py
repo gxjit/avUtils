@@ -1,23 +1,22 @@
-from .helpers import flatten, nSort
-from unicodedata import normalize
-from re import sub
 from functools import partial
 from pathlib import Path
+from re import sub
+from unicodedata import normalize
 
+from .helpers import nSort
 
 getFileList = lambda dirPath, exts: [
     f for f in dirPath.iterdir() if f.is_file() and f.suffix.lower() in exts
 ]
 
-getFileListAll = lambda dirPath, exts: [f for f in dirPath.iterdir() if f.is_file()]
+getFileListAll = lambda dirPath: [f for f in dirPath.iterdir() if f.is_file()]
 
-getFileListRec = lambda dirPath, exts: list(
-    flatten([dirPath.rglob(f"*{ext}") for ext in exts])
-)
 
-# getFileListAllRec = lambda dirPath, exts: list(
-#     flatten([dirPath.rglob("*") for ext in exts])
-# )
+getFileListRec = lambda dirPath, exts: [
+    f for f in dirPath.rglob("*.*") if f.suffix.lower() in exts
+]
+
+getFileListAllRec = lambda dirPath: dirPath.rglob("*")
 
 getDirList = lambda dirPath: [x for x in dirPath.iterdir() if x.is_dir()]
 
@@ -96,6 +95,10 @@ def slugifyCustom(value, replace={}, keepSpace=True):
         value = sub(r"[-\s]+", "-", value)
     return value
 
+
+# getFileListRec = lambda dirPath, exts: list(
+#     flatten([dirPath.rglob(f"*{ext}") for ext in exts])
+# )
 
 # getDirSize, cleanExit
 

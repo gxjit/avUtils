@@ -6,29 +6,23 @@ from json import loads as jLoads
 from pathlib import Path
 from shlex import join as shJoin
 from statistics import fmean
-from subprocess import run
 from sys import exit, version_info
 from time import time
-from traceback import format_exc
 
-from modules.fs import (
-    appendFile,
-    getFileList,
-    getFileListRec,
-    makeTargetDirs,
-    rmEmptyDirs,
-)
+from modules.fs import getFileList, getFileListRec, makeTargetDirs, rmEmptyDirs
 from modules.helpers import (
     bytesToMB,
     dynWait,
     fileDTime,
     now,
+    defVal,
     round2,
     secsToHMS,
-    timeNow,
+    noNoneCast,
 )
-from modules.io import waitN
-from modules.os import checkPaths
+from modules.io import printNLog, reportErr, statusInfo, waitN
+from modules.os import checkPaths, runCmd
+from modules.pkgState import setLogFile
 
 
 def parseArgs():
@@ -127,39 +121,6 @@ def parseArgs():
     return parser.parse_args()
 
 
-def printNLog(logFile, msg):
-    print(str(msg))
-    appendFile(logFile, msg)
-
-
-def swr(currFile, logFile, exp=None):
-    printNLog(logFile, "\n------\nERROR: Something went wrong.")
-    if exp and exp.stderr:
-        printNLog(logFile, f"\nStdErr: {exp.stderr}\nReturn Code: {exp.returncode}")
-    if exp:
-        printNLog(
-            logFile,
-            f"\nException:\n{exp}\n\nAdditional Details:\n{format_exc()}",
-        )
-
-
-def runCmd(cmd, currFile, logFile):
-    try:
-        cmdOut = run(cmd, check=True, capture_output=True, text=True)
-        cmdOut = cmdOut.stdout
-    except Exception as callErr:
-        swr(currFile, logFile, callErr)
-        return callErr
-    return cmdOut
-
-
-def statusInfo(status, idx, file, logFile):
-    printNLog(
-        logFile,
-        f"\n----------------\n{status} file {idx}:" f" {str(file.name)} at {timeNow()}",
-    )
-
-
 def cleanExit(outDir, tmpFile):
     print("\nPerforming exit cleanup...")
     if tmpFile.exists():
@@ -200,13 +161,14 @@ getffmpegCmd = lambda ffmpegPath, file, outFile, cv, ca, ov: [
 
 def selectCodec(codec, quality=None, speed=None):
 
-    quality = None if quality is None else str(quality)
+    # quality = None if quality is None else str(quality)
+    quality = noNoneCast(str, quality)
 
     if codec == "aac":
         cdc = [
             "libfdk_aac",
             "-b:a",
-            "72k" if quality is None else quality,
+            defVal("72k", quality),
             "-afterburner",
             "1",
             "-cutoff",
@@ -223,7 +185,7 @@ def selectCodec(codec, quality=None, speed=None):
             "-profile:a",
             "aac_he",
             "-b:a",
-            "56k" if quality is None else quality,
+            defVal("56k", quality),
             "-afterburner",
             "1",
         ]
@@ -234,7 +196,7 @@ def selectCodec(codec, quality=None, speed=None):
         cdc = [
             "libopus",
             "-b:a",
-            "48k" if quality is None else quality,
+            defVal("48k", quality),
             "-vbr",
             "on",
             "-compression_level",
@@ -252,7 +214,7 @@ def selectCodec(codec, quality=None, speed=None):
             "-preset:v",
             "slow" if speed is None else speed,
             "-crf",
-            "28" if quality is None else quality,
+            defVal("28", quality),
             "-profile:v",
             "high",
         ]
@@ -263,14 +225,14 @@ def selectCodec(codec, quality=None, speed=None):
             "-preset:v",
             "medium" if speed is None else speed,
             "-crf",
-            "32" if quality is None else quality,
+            defVal("32", quality),
         ]
 
     elif codec == "av1":
         cdc = [
             "libsvtav1",
             "-crf",
-            "52" if quality is None else quality,
+            defVal("52", quality),
             "-preset:v",
             "8" if speed is None else speed,
             "-g",
@@ -313,9 +275,9 @@ def optsVideo(fps, res):
     return opts
 
 
-def getMetaData(ffprobePath, currFile, logFile):
-    ffprobeCmd = getffprobeCmd(ffprobePath, currFile)
-    cmdOut = runCmd(ffprobeCmd, currFile, logFile)
+def getMetaData(ffprobePath, file):
+    ffprobeCmd = getffprobeCmd(ffprobePath, file)
+    cmdOut = runCmd(ffprobeCmd)
     if isinstance(cmdOut, Exception):
         return cmdOut
     metaData = jLoads(cmdOut)
@@ -364,7 +326,7 @@ formatParams = lambda params: "".join(
 )
 
 
-def compareDur(sourceDur, outDur, strmType, logFile):
+def compareDur(sourceDur, outDur, strmType):
     diff = abs(float(sourceDur) - float(outDur))
     n = 1  # < n seconds difference will trigger warning
     # if diff:
@@ -374,7 +336,7 @@ def compareDur(sourceDur, outDur, strmType, logFile):
             f"\n********\nWARNING: Differnce between {strmType} source and output "
             f"durations({str(round2(diff))} seconds) is more than {str(n)} second(s).\n"
         )
-        printNLog(logFile, msg)
+        printNLog(msg)
 
 
 ffprobePath, ffmpegPath = checkPaths(
@@ -394,9 +356,11 @@ dirPath = pargs.dir.resolve()
 
 
 if pargs.recursive:
-    getFileList = getFileListRec
+    getFilePaths = getFileListRec
+else:
+    getFilePaths = getFileList
 
-fileList = getFileList(dirPath, formats)
+fileList = getFilePaths(dirPath, formats)
 
 
 if not fileList:
@@ -405,8 +369,7 @@ if not fileList:
 
 (outDir,) = makeTargetDirs(dirPath, [f"out-{outExt}"])
 tmpFile = outDir.joinpath(f"tmp-{fileDTime()}.{outExt}")
-logFile = outDir.joinpath(f"{dirPath.stem}.log")
-printNLogP = partial(printNLog, logFile)
+setLogFile(outDir.joinpath(f"{dirPath.stem}.log"))
 
 if pargs.recursive:
     if version_info >= (3, 9):
@@ -414,11 +377,11 @@ if pargs.recursive:
     else:
         fileList = [f for f in fileList if not (str(outDir) in str(f))]
 
-outFileList = getFileList(outDir, [f".{outExt}"])
+outFileList = getFilePaths(outDir, [f".{outExt}"])
 
 atexit.register(cleanExit, outDir, tmpFile)
 
-printNLogP(f"\n\n====== {Path(__file__).stem} Started at {now()} ======\n")
+printNLog(f"\n\n====== {Path(__file__).stem} Started at {now()} ======\n")
 
 totalTime, inSizes, outSizes, lengths = ([] for i in range(4))
 
@@ -426,9 +389,7 @@ for idx, file in enumerate(fileList):
 
     outFile = Path(outDir.joinpath(file.relative_to(dirPath).with_suffix(f".{outExt}")))
 
-    statusInfoP = partial(
-        statusInfo, idx=f"{idx+1}/{len(fileList)}", file=file, logFile=logFile
-    )
+    statusInfoP = partial(statusInfo, idx=f"{idx+1}/{len(fileList)}", file=file)
 
     if any(outFileList) and outFile in outFileList:
         statusInfoP("Skipping")
@@ -436,7 +397,7 @@ for idx, file in enumerate(fileList):
 
     statusInfoP("Processing")
 
-    metaData = getMetaData(ffprobePath, file, logFile)
+    metaData = getMetaData(ffprobePath, file)
     if isinstance(metaData, Exception):
         break
 
@@ -455,15 +416,16 @@ for idx, file in enumerate(fileList):
     ov = optsVideo(fps, res)
     cmd = getffmpegCmd(ffmpegPath, file, tmpFile, cv, ca, ov)
 
-    printNLog(logFile, f"\n{shJoin(cmd)}")
+    printNLog(f"\n{shJoin(cmd)}")
     strtTime = time()
-    cmdOut = runCmd(cmd, file, logFile)
+    cmdOut = runCmd(cmd)
     if isinstance(cmdOut, Exception):
+        reportErr(cmdOut)
         break
     timeTaken = time() - strtTime
     totalTime.append(timeTaken)
 
-    printNLogP(cmdOut)
+    printNLog(cmdOut)
     if pargs.recursive and not outFile.parent.exists():
         outFile.parent.mkdir(parents=True)
 
@@ -471,13 +433,13 @@ for idx, file in enumerate(fileList):
 
     statusInfoP("Processed")
 
-    metaData = getMetaData(ffprobePath, outFile, logFile)
+    metaData = getMetaData(ffprobePath, outFile)
     if isinstance(metaData, Exception):
         break
 
     vdoOutParams, adoOutParams = getMeta(metaData, "video"), getMeta(metaData, "audio")
 
-    printNLogP(
+    printNLog(
         f"\nInput:: {formatParams(vdoInParams)}\n{formatParams(adoInParams)}"
         f"\nOutput:: {formatParams(vdoOutParams)}\n{formatParams(adoOutParams)}"
     )
@@ -486,13 +448,11 @@ for idx, file in enumerate(fileList):
         vdoInParams["duration"],
         vdoOutParams["duration"],
         vdoInParams["codec_type"],
-        logFile,
     )
     compareDur(
         adoInParams["duration"],
         adoOutParams["duration"],
         adoInParams["codec_type"],
-        logFile,
     )
 
     inSize = bytesToMB(file.stat().st_size)
@@ -504,7 +464,7 @@ for idx, file in enumerate(fileList):
     inSum, inMean, = sum(inSizes), fmean(inSizes)  # fmt: skip
     outSum, outMean = sum(outSizes), fmean(outSizes)
 
-    printNLogP(
+    printNLog(
         f"\n\nInput file size: {inSize} MB, "
         f"Output file size: {outSize} MB"
         f"\nProcessed {secsToHMS(length)} in: {secsToHMS(timeTaken)}, "
@@ -531,9 +491,6 @@ for idx, file in enumerate(fileList):
         waitN(int(pargs.wait))
     else:
         waitN(int(dynWait(timeTaken)))
-        # choice = getInput()
-        # if choice == "e":
-        #     break
 
 
 # H264: medium efficiency, fast encoding, widespread support

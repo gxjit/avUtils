@@ -3,10 +3,13 @@ from functools import partial
 from itertools import chain
 from re import compile
 
-
 flatten = chain.from_iterable
 
 flatMap = lambda x, y: list(flatten(map(x, y)))
+
+defVal = lambda defV, opt: opt if opt else defV
+
+noNoneCast = lambda typ, val: None if val is None else typ(val)
 
 round2 = partial(round, ndigits=2)
 

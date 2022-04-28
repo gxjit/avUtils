@@ -1,5 +1,34 @@
-from time import sleep
 from sys import exit
+from time import sleep
+from traceback import format_exc
+
+from .fs import appendFile
+from .helpers import timeNow
+from .pkgState import getLogFile
+
+
+def printNLog(msg):
+    msg = str(msg)
+    logFile = getLogFile()
+    print(msg)
+    if logFile:
+        appendFile(logFile, msg)
+
+
+def reportErr(exp=None):
+    printNLog("\n------\nERROR: Something went wrong.")
+    if exp and exp.stderr:
+        printNLog(f"\nStdErr: {exp.stderr}\nReturn Code: {exp.returncode}")
+    if exp:
+        printNLog(
+            f"\nException:\n{exp}\n\nAdditional Details:\n{format_exc()}",
+        )
+
+
+def statusInfo(status, idx, file):
+    printNLog(
+        f"\n----------------\n{status} file {idx}:" f" {str(file.name)} at {timeNow()}",
+    )
 
 
 def waitN(n):
@@ -12,7 +41,7 @@ def waitN(n):
     print("\r")
 
 
-def getInput():  # add exit() on choice == e
+def getInput():
     print("\nPress Enter Key continue or input 'e' to exit.")
     try:
         choice = input("\n> ")
