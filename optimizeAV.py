@@ -262,26 +262,26 @@ for idx, file in enumerate(fileList):
     lengths.append(length)
     inSum, inMean, = sum(inSizes), fmean(inSizes)  # fmt: skip
     outSum, outMean = sum(outSizes), fmean(outSizes)
+    filesLeft = len(fileList) - (idx + 1)
 
     printNLog(
         "\n"
-        f"\nProcessed: {secsToHMS(length)} in: {secsToHMS(timeTaken)}"
-        f" at speed: x{round2(length/timeTaken)}"
-        f"\nInput file size: {bytesToMB(inSize)} MB, "
-        f"Output file size: {bytesToMB(outSize)} MB"
-        f"\nTotal Input Size: {round2(bytesToMB(inSum))} MB, "
-        f"Average Input Size: {round2(bytesToMB(inMean))} MB"
-        f"\nTotal Output Size: {round2(bytesToMB(outSum))} MB, "
-        f"Average Output Size: {round2(bytesToMB(outMean))} MB"
-        "\nTotal Size Reduction: "
-        f"{(bytesToMB(inSum-outSum))} MB, "
-        "Average Size Reduction: "
-        f"{round2(((inMean-outMean)/inMean)*100)}%"
-        f"\nTotal Processing Time: {secsToHMS(sum(totalTime))}, "
-        f"Average Processing Time: {secsToHMS(fmean(totalTime))}"
-        "\nEstimated time: "
-        f"{secsToHMS(fmean(totalTime) * (len(fileList) - (idx+1)))}"
+        f"\nProcessed: {secsToHMS(length)}/{bytesToMB(inSize)} MB"
+        f" in: {secsToHMS(timeTaken)}/{bytesToMB(outSize)} MB"
+        f" at speed: x{round2(length/timeTaken)}."
+        "\n"
+        f"\nTotal size reduced by: {(bytesToMB(inSum-outSum))} MB "
+        f"to {(bytesToMB(outSum))} MB at an average of"
+        f" {round2(((inMean-outMean)/inMean)*100)}% size reduction."
+        f"\nProcessed: {secsToHMS(sum(totalTime))}/{(bytesToMB(inSum))} MB"
         f" at average speed: x{round2(fmean(lengths)/fmean(totalTime))}"
+        f" for average input size: {(bytesToMB(inMean))} MB."
+        f"\nEstimated output size: {bytesToMB(outMean * len(fileList))}"
+        f" for: {len(fileList)} file(s) at average output"
+        f" size {(bytesToMB(outMean))} MB."
+        "\nEstimated time left: "
+        f"{secsToHMS(fmean(totalTime) * filesLeft)} for: {filesLeft} file(s)"
+        f" at average processing time: {secsToHMS(fmean(totalTime))}."
     )
 
     if idx + 1 == len(fileList):
