@@ -79,15 +79,15 @@ def parseArgs():
         default="he",
         type=aCodec,
         help='Select an audio codec from AAC-LC: "aac", HE-AAC/AAC-LC with SBR: "he" '
-        ', Opus: "opus" and copy audio: "cp". (default: he)',
+        ', Opus: "opus" and copy: "ac". (default: he)',
     )
     parser.add_argument(
         "-cv",
         "--cVideo",
         default="hevc",
         type=vCodec,
-        help='Select a video codec from HEVC/H265: "hevc", AVC/H264: "avc" and '
-        'AV1: "av1". (default: hevc)',
+        help='Select a video codec from HEVC/H265: "hevc", AVC/H264: "avc" , '
+        'AV1: "av1", copy: "vc" and no video: "vn". (default: hevc)',
     )
     parser.add_argument(
         "-qv",
@@ -190,7 +190,7 @@ for idx, file in enumerate(fileList):
 
     ov = []
 
-    if not noVideo:  # or not pargs.cVideo == "vc"
+    if not noVideo:
         vdoInParams = getMetaP("video")
 
         if not pargs.cVideo == "vc":
@@ -293,9 +293,10 @@ for idx, file in enumerate(fileList):
         waitN(int(dynWait(timeTaken)))
 
 
-# H264: medium efficiency, fast encoding, widespread support
-# > H265: high efficiency, slow encoding, medicore support
-# > VP9: high efficiency, slower encoding, less support than h265,
+# H264(x264): medium efficiency, fast encoding, widespread support
+# > H265(x265): high efficiency, slow encoding, medicore support
+# > VP9(libvpx): high efficiency, slower encoding, less support than h265,
 # very little support on apple stuff
-# > AV1: higher efficiency, slow encoding, little to no support
+# > AV1(svt-av1): higher efficiency, slow encoding, little to no support,
+# encoders/decoders are not stable/established enough yet
 # libopus > fdk_aac SBR > fdk_aac >= vorbis > libmp3lame > ffmpeg aac
