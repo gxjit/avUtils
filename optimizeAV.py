@@ -40,7 +40,7 @@ def parseArgs():
             raise argparse.ArgumentTypeError("Invalid Codec")
 
     aCodec = partial(checkCodec, codecs=["opus", "he", "aac", "ac"])
-    vCodec = partial(checkCodec, codecs=["avc", "hevc", "av1", "nv"])
+    vCodec = partial(checkCodec, codecs=["avc", "hevc", "av1", "vn"])
 
     parser = argparse.ArgumentParser(
         description="Optimize Video/Audio files by encoding to avc/hevc/aac/opus."
@@ -129,16 +129,18 @@ ffprobePath, ffmpegPath = checkPaths(
     }
 )
 
-if pargs.cVideo == "nv":
+noVideo = True if pargs.cVideo == "vn" else False
+
+if noVideo:
 
     formats = [".flac", ".m4a", ".mp3", ".mp4", ".wav"]
 
-    outExt = "opus" if pargs.cVideo == "opus" else "m4a"
+    outExt = ".opus" if pargs.cVideo == "opus" else ".m4a"
 else:
 
     formats = [".mp4", ".avi", ".mov", ".mkv"]
 
-    outExt = "mp4"
+    outExt = ".mp4"
 
 meta = {
     "basic": ["codec_type", "codec_name", "profile", "duration", "bit_rate"],
@@ -158,8 +160,8 @@ fileList = getFilePaths(dirPath, formats)
 if not fileList:
     nothingExit()
 
-(outDir,) = makeTargetDirs(dirPath, [f"out-{outExt}"])
-tmpFile = outDir.joinpath(f"tmp-{fileDTime()}.{outExt}")
+(outDir,) = makeTargetDirs(dirPath, [f"out-{outExt[1:]}"])
+tmpFile = outDir.joinpath(f"tmp-{fileDTime()}{outExt}")
 setLogFile(outDir.joinpath(f"{dirPath.stem}.log"))
 
 if pargs.recursive:
@@ -168,7 +170,7 @@ if pargs.recursive:
     else:
         fileList = [f for f in fileList if not (str(outDir) in str(f))]
 
-outFileList = getFilePaths(outDir, [f".{outExt}"])
+outFileList = getFilePaths(outDir, [outExt])
 
 atexit.register(cleanUp, [outDir], [tmpFile])
 
@@ -178,7 +180,7 @@ totalTime, inSizes, outSizes, lengths = ([] for i in range(4))
 
 for idx, file in enumerate(fileList):
 
-    outFile = Path(outDir.joinpath(file.relative_to(dirPath).with_suffix(f".{outExt}")))
+    outFile = Path(outDir.joinpath(file.relative_to(dirPath).with_suffix(outExt)))
 
     statusInfoP = partial(statusInfo, idx=f"{idx+1}/{len(fileList)}", file=file)
 
@@ -198,7 +200,7 @@ for idx, file in enumerate(fileList):
     adoInParams = getMetaP("audio")
     ca = selectCodec(pargs.cAudio, pargs.qAudio)
 
-    if not pargs.cVideo == "nv":
+    if not noVideo:
         vdoInParams = getMetaP("video")
 
         res = pargs.res
@@ -240,7 +242,7 @@ for idx, file in enumerate(fileList):
 
     getMetaP = partial(getMeta, metaData, meta)
 
-    if not pargs.cVideo == "nv":
+    if not noVideo:
 
         vdoOutParams = getMetaP("video"),
 
