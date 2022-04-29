@@ -39,8 +39,8 @@ def parseArgs():
         else:
             raise argparse.ArgumentTypeError("Invalid Codec")
 
-    aCodec = partial(checkCodec, codecs=["opus", "he", "aac", "cp"])
-    vCodec = partial(checkCodec, codecs=["avc", "hevc", "av1"])
+    aCodec = partial(checkCodec, codecs=["opus", "he", "aac", "ac"])
+    vCodec = partial(checkCodec, codecs=["avc", "hevc", "av1", "nv"])
 
     parser = argparse.ArgumentParser(
         description="Optimize Video/Audio files by encoding to avc/hevc/aac/opus."
@@ -120,6 +120,8 @@ def parseArgs():
     return parser.parse_args()
 
 
+pargs = parseArgs()
+
 ffprobePath, ffmpegPath = checkPaths(
     {
         "ffprobe": r"C:\ffmpeg\bin\ffprobe.exe",
@@ -127,9 +129,16 @@ ffprobePath, ffmpegPath = checkPaths(
     }
 )
 
-formats = [".mp4", ".avi", ".mov", ".mkv"]
+if pargs.cVideo == "nv":
 
-outExt = "mp4"
+    formats = [".flac", ".m4a", ".mp3", ".mp4", ".wav"]
+
+    outExt = "opus" if pargs.cVideo == "opus" else "m4a"
+else:
+
+    formats = [".mp4", ".avi", ".mov", ".mkv"]
+
+    outExt = "mp4"
 
 meta = {
     "basic": ["codec_type", "codec_name", "profile", "duration", "bit_rate"],
@@ -137,10 +146,7 @@ meta = {
     "video": ["height", "r_frame_rate"],
 }
 
-pargs = parseArgs()
-
 dirPath = pargs.dir.resolve()
-
 
 if pargs.recursive:
     getFilePaths = getFileListRec
@@ -149,10 +155,8 @@ else:
 
 fileList = getFilePaths(dirPath, formats)
 
-
 if not fileList:
     nothingExit()
-
 
 (outDir,) = makeTargetDirs(dirPath, [f"out-{outExt}"])
 tmpFile = outDir.joinpath(f"tmp-{fileDTime()}.{outExt}")
@@ -191,20 +195,26 @@ for idx, file in enumerate(fileList):
 
     getMetaP = partial(getMeta, metaData, meta)
 
-    vdoInParams, adoInParams = getMetaP("video"), getMetaP("audio")
-
-    res = pargs.res
-    if int(vdoInParams["height"]) < res:
-        res = None
-
-    fps = pargs.fps
-    if float(Fraction(vdoInParams["r_frame_rate"])) < fps:
-        fps = vdoInParams["r_frame_rate"]
-
+    adoInParams = getMetaP("audio")
     ca = selectCodec(pargs.cAudio, pargs.qAudio)
+
+    if not pargs.cVideo == "nv":
+        vdoInParams = getMetaP("video")
+
+        res = pargs.res
+        if int(vdoInParams["height"]) < res:
+            res = None
+
+        fps = pargs.fps
+        if float(Fraction(vdoInParams["r_frame_rate"])) < fps:
+            fps = vdoInParams["r_frame_rate"]
+
+        ov = optsVideo(fps, res)
+    else:
+        ov = []
+
     cv = selectCodec(pargs.cVideo, pargs.qVideo, pargs.speed)
-    ov = optsVideo(fps, res)
-    cmd = getffmpegCmd(ffmpegPath, file, tmpFile, cv, ca, ov)
+    cmd = getffmpegCmd(ffmpegPath, file, tmpFile, ca, cv, ov)
 
     printNLog(f"\n{shJoin(cmd)}")
     strtTime = time()
@@ -230,18 +240,28 @@ for idx, file in enumerate(fileList):
 
     getMetaP = partial(getMeta, metaData, meta)
 
-    vdoOutParams, adoOutParams = getMetaP("video"), getMetaP("audio")
+    if not pargs.cVideo == "nv":
+
+        vdoOutParams = getMetaP("video"),
+
+        printNLog(
+            f"\nVideo Input:: {formatParams(vdoInParams)}"
+            f"\nVideo Output:: {formatParams(vdoOutParams)}"
+        )
+
+        compareDur(
+            vdoInParams["duration"],
+            vdoOutParams["duration"],
+            vdoInParams["codec_type"],
+        )
+
+    adoOutParams = getMetaP("audio")
 
     printNLog(
-        f"\nInput:: {formatParams(vdoInParams)}\n{formatParams(adoInParams)}"
-        f"\nOutput:: {formatParams(vdoOutParams)}\n{formatParams(adoOutParams)}"
+        f"\nAudio Input:: {formatParams(adoInParams)}"
+        f"\nAudio Output:: {formatParams(adoOutParams)}"
     )
 
-    compareDur(
-        vdoInParams["duration"],
-        vdoOutParams["duration"],
-        vdoInParams["codec_type"],
-    )
     compareDur(
         adoInParams["duration"],
         adoOutParams["duration"],
@@ -250,7 +270,7 @@ for idx, file in enumerate(fileList):
 
     inSize = bytesToMB(file.stat().st_size)
     outSize = bytesToMB(outFile.stat().st_size)
-    length = float(vdoInParams["duration"])
+    length = float(adoInParams["duration"])
     inSizes.append(inSize)
     outSizes.append(outSize)
     lengths.append(length)

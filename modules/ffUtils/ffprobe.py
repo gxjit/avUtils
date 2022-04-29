@@ -64,7 +64,7 @@ def filterMeta(metaData, cdcType, basics, xtr=None):
                 params = basicMeta
     try:
         params["bit_rate"] = str(round2(float(params["bit_rate"]) / 1000))
-    except KeyError:
+    except (KeyError, ValueError):
         pass
     return params
 

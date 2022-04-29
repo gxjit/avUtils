@@ -1,13 +1,11 @@
 from ..helpers import noNoneCast, defVal
 
-getffmpegCmd = lambda ffmpegPath, file, outFile, cv, ca, ov: [
+getffmpegCmd = lambda ffmpegPath, file, outFile, ca, cv=[], ov=[]: [
     ffmpegPath,
     "-i",
     str(file),
-    "-c:v",
     *cv,
     *ov,
-    "-c:a",
     *ca,
     "-loglevel",
     "warning",  # or info
@@ -19,8 +17,15 @@ def selectCodec(codec, quality=None, speed=None):
 
     quality = noNoneCast(str, quality)
 
-    if codec == "aac":
+    if codec == "ac":
+        cdc = ["-c:a", "copy"]
+
+    elif codec == "nv":
+        cdc = ["-vn"]
+
+    elif codec == "aac":
         cdc = [
+            "-c:a",
             "libfdk_aac",
             "-b:a",
             defVal("72k", quality),
@@ -36,6 +41,7 @@ def selectCodec(codec, quality=None, speed=None):
 
     elif codec == "he":
         cdc = [
+            "-c:a",
             "libfdk_aac",
             "-profile:a",
             "aac_he",
@@ -49,6 +55,7 @@ def selectCodec(codec, quality=None, speed=None):
 
     elif codec == "opus":
         cdc = [
+            "-c:a",
             "libopus",
             "-b:a",
             defVal("48k", quality),
@@ -60,11 +67,9 @@ def selectCodec(codec, quality=None, speed=None):
             "20",
         ]
 
-    elif codec == "cp":
-        cdc = ["copy"]
-
     elif codec == "avc":
         cdc = [
+            "-c:v",
             "libx264",
             "-preset:v",
             defVal("slow", speed),
@@ -76,6 +81,7 @@ def selectCodec(codec, quality=None, speed=None):
 
     elif codec == "hevc":
         cdc = [
+            "-c:v",
             "libx265",
             "-preset:v",
             defVal("medium", speed),
@@ -85,6 +91,7 @@ def selectCodec(codec, quality=None, speed=None):
 
     elif codec == "av1":
         cdc = [
+            "-c:v",
             "libsvtav1",
             "-crf",
             defVal("52", quality),
@@ -96,6 +103,7 @@ def selectCodec(codec, quality=None, speed=None):
 
     # elif codec == "vp9":
     #     cdc = [
+    #         "-c:v",
     #         "libvpx-vp9",
     #         "-crf",
     #         "42" if quality is None else quality,
@@ -112,6 +120,8 @@ def selectCodec(codec, quality=None, speed=None):
     #         "-row-mt",
     #         "1",
     #     ]  # prefer 2 pass for HQ vp9 encodes
+    # if not cdc == "nv":
+    #     if cdc
 
     return cdc
 
