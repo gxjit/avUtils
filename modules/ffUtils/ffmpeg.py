@@ -1,3 +1,5 @@
+from fractions import Fraction
+
 from ..helpers import noNoneCast, defVal
 
 getffmpegCmd = lambda ffmpegPath, file, outFile, ca, cv=[], ov=[]: [
@@ -126,17 +128,21 @@ def selectCodec(codec, quality=None, speed=None):
     return cdc
 
 
-def optsVideo(fps, res):  # fps only when specified?
+def optsVideo(srcRes, srcFps, limitRes, limitFps):
+
     opts = [
         "-pix_fmt",
         "yuv420p",
         "-vsync",
         "vfr",
-        "-r",
-        str(fps),
     ]
-    if res is not None:
-        opts = [*opts, "-vf", f"scale=-2:{str(res)}"]
+
+    if float(Fraction(srcFps)) > limitFps:
+        opts = [*opts, "-r", str(limitFps)]
+
+    if int(srcRes) > limitRes:
+        opts = [*opts, "-vf", f"scale=-2:{str(limitRes)}"]
+
     return opts
 
 

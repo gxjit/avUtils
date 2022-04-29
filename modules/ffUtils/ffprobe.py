@@ -72,9 +72,11 @@ def filterMeta(metaData, cdcType, basics, xtr=None):
 def getMeta(metaData, meta, cdcType):
     return filterMeta(metaData, cdcType, meta["basic"], meta[cdcType])
 
+
 def getTags(metaData, tags):
     js = metaData["format"]["tags"]
     return [js.get(tag, "") for tag in tags]
+
 
 formatParams = lambda params: "".join(
     [f"{param}: {value}; " for param, value in params.items()]
@@ -92,5 +94,3 @@ def compareDur(sourceDur, outDur, strmType, n=1):
             f"durations({str(round2(diff))} seconds) is more than {str(n)} second(s).\n"
         )
         printNLog(msg)
-
-

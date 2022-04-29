@@ -1,6 +1,5 @@
 import argparse
 import atexit
-from fractions import Fraction
 from functools import partial
 from pathlib import Path
 from shlex import join as shJoin
@@ -133,12 +132,12 @@ noVideo = True if pargs.cVideo == "vn" else False
 
 if noVideo:
 
-    formats = [".flac", ".m4a", ".mp3", ".mp4", ".wav"]
+    formats = [".flac", ".wav", ".m4a", ".mp3", ".mp4"]
 
     outExt = ".opus" if pargs.cAudio == "opus" else ".m4a"
 else:
 
-    formats = [".mp4", ".avi", ".mov", ".mkv"]
+    formats = [".mp4", ".mov", ".mkv", ".avi"]
 
     outExt = ".mp4"
 
@@ -198,23 +197,17 @@ for idx, file in enumerate(fileList):
     getMetaP = partial(getMeta, metaData, meta)
 
     adoInParams = getMetaP("audio")
-    ca = selectCodec(pargs.cAudio, pargs.qAudio)
 
     if not noVideo:
         vdoInParams = getMetaP("video")
 
-        res = pargs.res
-        if int(vdoInParams["height"]) < res:
-            res = None
-
-        fps = pargs.fps
-        if float(Fraction(vdoInParams["r_frame_rate"])) < fps:
-            fps = vdoInParams["r_frame_rate"]
-
-        ov = optsVideo(fps, res)
+        ov = optsVideo(
+            vdoInParams["height"], vdoInParams["r_frame_rate"], pargs.res, pargs.fps
+        )
     else:
         ov = []
 
+    ca = selectCodec(pargs.cAudio, pargs.qAudio)
     cv = selectCodec(pargs.cVideo, pargs.qVideo, pargs.speed)
     cmd = getffmpegCmd(ffmpegPath, file, tmpFile, ca, cv, ov)
 
