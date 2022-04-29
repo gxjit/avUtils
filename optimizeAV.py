@@ -265,10 +265,10 @@ for idx, file in enumerate(fileList):
 
     printNLog(
         "\n"
-        f"\nInput file size: {inSize} MB, "
-        f"Output file size: {outSize} MB"
         f"\nProcessed {secsToHMS(length)} in: {secsToHMS(timeTaken)}, "
         f"Processing Speed: x{round2(length/timeTaken)}"
+        f"\nInput file size: {inSize} MB, "
+        f"Output file size: {outSize} MB"
         f"\nTotal Input Size: {round2(inSum)} MB, "
         f"Average Input Size: {round2(inMean)} MB"
         f"\nTotal Output Size: {round2(outSum)} MB, "
