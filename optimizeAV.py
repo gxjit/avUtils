@@ -188,6 +188,8 @@ for idx, file in enumerate(fileList):
 
     adoInParams = getMetaP("audio")
 
+    ov = []
+
     if not noVideo:  # or not pargs.cVideo == "vc"
         vdoInParams = getMetaP("video")
 
@@ -195,11 +197,6 @@ for idx, file in enumerate(fileList):
             ov = optsVideo(
                 vdoInParams["height"], vdoInParams["r_frame_rate"], pargs.res, pargs.fps
             )
-
-    try:
-        ov
-    except NameError:
-        ov = []
 
     ca = selectCodec(pargs.cAudio, pargs.qAudio)
     cv = selectCodec(pargs.cVideo, pargs.qVideo, pargs.speed)
