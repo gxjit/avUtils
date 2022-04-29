@@ -254,8 +254,8 @@ for idx, file in enumerate(fileList):
         adoInParams["codec_type"],
     )
 
-    inSize = bytesToMB(file.stat().st_size)
-    outSize = bytesToMB(outFile.stat().st_size)
+    inSize = file.stat().st_size
+    outSize = outFile.stat().st_size
     length = float(adoInParams["duration"])
     inSizes.append(inSize)
     outSizes.append(outSize)
@@ -267,14 +267,14 @@ for idx, file in enumerate(fileList):
         "\n"
         f"\nProcessed: {secsToHMS(length)} in: {secsToHMS(timeTaken)}"
         f" at speed: x{round2(length/timeTaken)}"
-        f"\nInput file size: {inSize} MB, "
-        f"Output file size: {outSize} MB"
-        f"\nTotal Input Size: {round2(inSum)} MB, "
-        f"Average Input Size: {round2(inMean)} MB"
-        f"\nTotal Output Size: {round2(outSum)} MB, "
-        f"Average Output Size: {round2(outMean)} MB"
+        f"\nInput file size: {bytesToMB(inSize)} MB, "
+        f"Output file size: {bytesToMB(outSize)} MB"
+        f"\nTotal Input Size: {round2(bytesToMB(inSum))} MB, "
+        f"Average Input Size: {round2(bytesToMB(inMean))} MB"
+        f"\nTotal Output Size: {round2(bytesToMB(outSum))} MB, "
+        f"Average Output Size: {round2(bytesToMB(outMean))} MB"
         "\nTotal Size Reduction: "
-        f"{round2(((inSum-outSum)/inSum)*100)}%, "
+        f"{(bytesToMB(inSum-outSum))} MB, "
         "Average Size Reduction: "
         f"{round2(((inMean-outMean)/inMean)*100)}%"
         f"\nTotal Processing Time: {secsToHMS(sum(totalTime))}, "
