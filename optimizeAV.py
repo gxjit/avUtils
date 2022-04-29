@@ -265,8 +265,8 @@ for idx, file in enumerate(fileList):
 
     printNLog(
         "\n"
-        f"\nProcessed {secsToHMS(length)} in: {secsToHMS(timeTaken)}, "
-        f"Processing Speed: x{round2(length/timeTaken)}"
+        f"\nProcessed: {secsToHMS(length)} in: {secsToHMS(timeTaken)}"
+        f" at speed: x{round2(length/timeTaken)}"
         f"\nInput file size: {inSize} MB, "
         f"Output file size: {outSize} MB"
         f"\nTotal Input Size: {round2(inSum)} MB, "
@@ -280,8 +280,8 @@ for idx, file in enumerate(fileList):
         f"\nTotal Processing Time: {secsToHMS(sum(totalTime))}, "
         f"Average Processing Time: {secsToHMS(fmean(totalTime))}"
         "\nEstimated time: "
-        f"{secsToHMS(fmean(totalTime) * (len(fileList) - (idx+1)))}, "
-        f"Average Speed: x{round2(fmean(lengths)/fmean(totalTime))}"
+        f"{secsToHMS(fmean(totalTime) * (len(fileList) - (idx+1)))}"
+        f" at average speed: x{round2(fmean(lengths)/fmean(totalTime))}"
     )
 
     if idx + 1 == len(fileList):
