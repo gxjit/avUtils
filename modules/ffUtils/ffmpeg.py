@@ -22,6 +22,9 @@ def selectCodec(codec, quality=None, speed=None):
     if codec == "ac":
         cdc = ["-c:a", "copy"]
 
+    elif codec == "vc":
+        cdc = ["-c:v", "copy"]
+
     elif codec == "vn":
         cdc = ["-vn"]
 

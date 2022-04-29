@@ -21,31 +21,19 @@ from modules.helpers import (
 from modules.io import printNLog, reportErr, startMsg, statusInfo, waitN
 from modules.os import checkPaths, runCmd
 from modules.pkgState import setLogFile
+from modules.cli import checkDirPath, checkValIn
 
 
 def parseArgs():
-    def dirPath(pth):
-        pthObj = Path(pth)
-        if pthObj.is_dir():
-            return pthObj
-        else:
-            raise argparse.ArgumentTypeError("Invalid Directory path")
 
-    def checkCodec(cdc, codecs):
-        cdc = cdc.lower()
-        if cdc in codecs:
-            return cdc
-        else:
-            raise argparse.ArgumentTypeError("Invalid Codec")
-
-    aCodec = partial(checkCodec, codecs=["opus", "he", "aac", "ac"])
-    vCodec = partial(checkCodec, codecs=["avc", "hevc", "av1", "vn"])
+    aCodec = partial(checkValIn, ["opus", "he", "aac", "ac"], str)
+    vCodec = partial(checkValIn, ["avc", "hevc", "av1", "vn", "vc"], str)
 
     parser = argparse.ArgumentParser(
         description="Optimize Video/Audio files by encoding to avc/hevc/aac/opus."
     )
     parser.add_argument(
-        "-d", "--dir", required=True, help="Directory path", type=dirPath
+        "-d", "--dir", required=True, help="Directory path", type=checkDirPath
     )
     parser.add_argument(
         "-r",
@@ -200,13 +188,17 @@ for idx, file in enumerate(fileList):
 
     adoInParams = getMetaP("audio")
 
-    if not noVideo:
+    if not noVideo:  # or not pargs.cVideo == "vc"
         vdoInParams = getMetaP("video")
 
-        ov = optsVideo(
-            vdoInParams["height"], vdoInParams["r_frame_rate"], pargs.res, pargs.fps
-        )
-    else:
+        if not pargs.cVideo == "vc":
+            ov = optsVideo(
+                vdoInParams["height"], vdoInParams["r_frame_rate"], pargs.res, pargs.fps
+            )
+
+    try:
+        ov
+    except NameError:
         ov = []
 
     ca = selectCodec(pargs.cAudio, pargs.qAudio)
@@ -275,7 +267,8 @@ for idx, file in enumerate(fileList):
     outSum, outMean = sum(outSizes), fmean(outSizes)
 
     printNLog(
-        f"\n\nInput file size: {inSize} MB, "
+        "\n"
+        f"\nInput file size: {inSize} MB, "
         f"Output file size: {outSize} MB"
         f"\nProcessed {secsToHMS(length)} in: {secsToHMS(timeTaken)}, "
         f"Processing Speed: x{round2(length/timeTaken)}"
