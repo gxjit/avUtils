@@ -135,7 +135,7 @@ if noVideo:
 
     formats = [".flac", ".m4a", ".mp3", ".mp4", ".wav"]
 
-    outExt = ".opus" if pargs.cVideo == "opus" else ".m4a"
+    outExt = ".opus" if pargs.cAudio == "opus" else ".m4a"
 else:
 
     formats = [".mp4", ".avi", ".mov", ".mkv"]
@@ -244,7 +244,7 @@ for idx, file in enumerate(fileList):
 
     if not noVideo:
 
-        vdoOutParams = getMetaP("video"),
+        vdoOutParams = getMetaP("video")
 
         printNLog(
             f"\nVideo Input:: {formatParams(vdoInParams)}"
