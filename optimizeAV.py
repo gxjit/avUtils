@@ -175,6 +175,8 @@ atexit.register(cleanUp, [outDir], [tmpFile])
 
 startMsg()
 
+getMetaDataP = partial(getMetaData, ffprobePath)
+
 totalTime, inSizes, outSizes, lengths = ([] for i in range(4))
 
 for idx, file in enumerate(fileList):
@@ -189,7 +191,7 @@ for idx, file in enumerate(fileList):
 
     statusInfoP("Processing")
 
-    metaData = getMetaData(ffprobePath, file)
+    metaData = getMetaDataP(file)
     if isinstance(metaData, Exception):
         reportErr(metaData)
         break
@@ -228,7 +230,7 @@ for idx, file in enumerate(fileList):
 
     statusInfoP("Processed")
 
-    metaData = getMetaData(ffprobePath, outFile)
+    metaData = getMetaDataP(outFile)
     if isinstance(metaData, Exception):
         reportErr(metaData)
         break

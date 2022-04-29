@@ -144,18 +144,3 @@ def optsVideo(srcRes, srcFps, limitRes, limitFps):
         opts = [*opts, "-vf", f"scale=-2:{str(limitRes)}"]
 
     return opts
-
-
-#
-
-# res = pargs.res
-# if int(vdoInParams["height"]) < res:
-#     res = None
-
-# fps = pargs.fps
-# if float(Fraction(vdoInParams["r_frame_rate"])) < fps:
-#     fps = vdoInParams["r_frame_rate"] # or None
-
-# ca = selectCodec(pargs.cAudio, pargs.qAudio)
-# cv = selectCodec(pargs.cVideo, pargs.qVideo, pargs.speed)
-# ov = optsVideo(fps, res)
