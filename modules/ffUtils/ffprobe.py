@@ -15,6 +15,8 @@ getffprobeCmd = lambda ffprobePath, file: [
     str(file),
 ]
 
+# -show_chapters -show_error -show_log
+
 
 def getMetaData(ffprobePath, file):
     ffprobeCmd = getffprobeCmd(ffprobePath, file)

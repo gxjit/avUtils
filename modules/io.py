@@ -76,8 +76,3 @@ def areYouSure():
         return
     else:
         exit()
-
-
-# def nothingExit():
-#     print("Nothing to do.")
-#     exit()

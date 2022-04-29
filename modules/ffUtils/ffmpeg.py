@@ -103,28 +103,6 @@ def selectCodec(codec, quality=None, speed=None):
             "240",
         ]  # -g fps*10
 
-    # elif codec == "vp9":
-    #     cdc = [
-    #         "-c:v",
-    #         "libvpx-vp9",
-    #         "-crf",
-    #         "42" if quality is None else quality,
-    #         "-b:v",
-    #         "0",
-    #         "-quality",
-    #         "good",
-    #         "-speed",
-    #         "3" if speed is None else speed,
-    #         "-g",  # fps*10
-    #         "240",
-    #         "-tile-columns",
-    #         "1",  # 1 for 720p, 2 for 1080p, 3 for 2160p etc
-    #         "-row-mt",
-    #         "1",
-    #     ]  # prefer 2 pass for HQ vp9 encodes
-    # if not cdc == "nv":
-    #     if cdc
-
     return cdc
 
 
@@ -144,3 +122,25 @@ def optsVideo(srcRes, srcFps, limitRes, limitFps):
         opts = [*opts, "-vf", f"scale=-2:{str(limitRes)}"]
 
     return opts
+
+
+# VP9 config
+# elif codec == "vp9":
+#     cdc = [
+#         "-c:v",
+#         "libvpx-vp9",
+#         "-crf",
+#         "42" if quality is None else quality,
+#         "-b:v",
+#         "0",
+#         "-quality",
+#         "good",
+#         "-speed",
+#         "3" if speed is None else speed,
+#         "-g",  # fps*10
+#         "240",
+#         "-tile-columns",
+#         "1",  # 1 for 720p, 2 for 1080p, 3 for 2160p etc
+#         "-row-mt",
+#         "1",
+#     ]  # prefer 2 pass for HQ vp9 encodes
