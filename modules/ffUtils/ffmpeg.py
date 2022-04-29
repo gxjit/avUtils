@@ -2,7 +2,7 @@ from fractions import Fraction
 
 from ..helpers import noNoneCast, defVal
 
-getffmpegCmd = lambda ffmpegPath, file, outFile, ca, cv=[], ov=[]: [
+getffmpegCmd = lambda ffmpegPath, file, outFile, ca, cv, ov=[]: [
     ffmpegPath,
     "-i",
     str(file),

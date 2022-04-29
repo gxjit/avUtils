@@ -159,7 +159,7 @@ fileList = getFilePaths(dirPath, formats)
 if not fileList:
     nothingExit()
 
-(outDir,) = makeTargetDirs(dirPath, [f"out-{outExt[1:]}"])
+outDir = makeTargetDirs(dirPath, [f"out-{outExt[1:]}"])[0]
 tmpFile = outDir.joinpath(f"tmp-{fileDTime()}{outExt}")
 setLogFile(outDir.joinpath(f"{dirPath.stem}.log"))
 
