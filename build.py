@@ -42,10 +42,10 @@ runP = partial(run, shell=True, check=True)
 if system() == "Linux":
     if pargs.pyinst:
         aptDeps = "upx"
+        runP(f"sudo apt-get install -y {aptDeps}")
     # elif pargs.nuitka:
     #     aptDeps = "nuitka"
 
-    runP(f"sudo apt-get install -y {aptDeps}")
 
 # if pargs.pyinst:
 #     if system() == "Windows":
