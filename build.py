@@ -53,12 +53,12 @@ runP(f"pip install -U --user {pipDeps}")
 
 if pargs.pyinst:
     cmd = (
-        f"pyinstaller -y --distpath {buildPath} --workpath {tempPath} "
+        f"python -m pyinstaller -y --distpath {buildPath} --workpath {tempPath} "
         f"--specpath {tempPath} --clean --onedir {appEntry}"
     )
 elif pargs.nuitka:
     cmd = (
-        "nuitka --standalone --assume-yes-for-downloads "
+        "python -m nuitka --standalone --assume-yes-for-downloads "
         f"--output-dir={buildPath} --remove-output {appEntry}"
     )
 
