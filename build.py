@@ -58,7 +58,7 @@ if pargs.pyinst:
     )
 elif pargs.nuitka:
     cmd = (
-        "nuitka --standalone --assume-yes-for-downloads "
+        "exec nuitka --standalone --assume-yes-for-downloads "
         f"--output-dir={buildPath} --remove-output {appEntry}"
     )
 
