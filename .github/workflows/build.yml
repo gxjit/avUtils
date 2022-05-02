@@ -15,11 +15,11 @@ jobs:
           python ${{ github.workspace }}/build.py -n
           python ${{ github.workspace }}/build.py -n -o
 
-        - name: Upload
-          uses: actions/upload-artifact@v3
-          with:
-            name: build-download
-            path: |
-              ${{ github.workspace }}/**/op*.zip
-            if-no-files-found: error
-            retention-days: 30
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-download
+          path: |
+            ${{ github.workspace }}/**/op*.zip
+          if-no-files-found: error
+          retention-days: 30
