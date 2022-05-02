@@ -43,9 +43,6 @@ if system() == "Linux":
     if pargs.pyinst:
         aptDeps = "upx"
         runP(f"sudo apt-get install -y {aptDeps}")
-    # elif pargs.nuitka:
-    #     aptDeps = "nuitka"
-
 
 # if pargs.pyinst:
 #     if system() == "Windows":
