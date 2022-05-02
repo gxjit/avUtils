@@ -1,0 +1,26 @@
+name: Build
+on: [push]
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Build
+    - uses: actions/setup-python@v3
+    with:
+      python-version: "3.10"
+    - uses: actions/checkout@v3
+      run: |
+        python ${{ github.workspace }}/build.py -pi
+        python ${{ github.workspace }}/build.py -pi -o
+        python ${{ github.workspace }}/build.py -n
+        python ${{ github.workspace }}/build.py -n -o
+
+    - name: Upload
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-download
+        path: |
+          ${{ github.workspace }}/**/op*.zip
+        if-no-files-found: error
+        retention-days: 30
+
