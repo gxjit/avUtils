@@ -16,7 +16,7 @@ jobs:
           python ${{ github.workspace }}/build.py -n -o
 
       - name: Upload
-      - uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3
         with:
           name: build-download
           path: |
