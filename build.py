@@ -42,8 +42,8 @@ runP = partial(run, shell=True, check=True)
 if system() == "Linux":
     if pargs.pyinst:
         aptDeps = "upx"
-    elif pargs.nuitka:
-        aptDeps = "nuitka"
+    # elif pargs.nuitka:
+    #     aptDeps = "nuitka"
 
     runP(f"sudo apt-get install -y {aptDeps}")
 
@@ -65,7 +65,7 @@ if pargs.pyinst:
     )
 elif pargs.nuitka:
     cmd = (
-        "nuitka --standalone --assume-yes-for-downloads "
+        "python -m nuitka --standalone --assume-yes-for-downloads "
         f"--output-dir={buildPath} --remove-output {appEntry}"
     )
 

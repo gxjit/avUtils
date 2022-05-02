@@ -4,9 +4,8 @@ on:
     tags:
       - "v*.*.*"
 jobs:
-  Build:
+  Build-Upload-Release:
     runs-on: ${{ matrix.os }}
-
 
     strategy:
         matrix:
