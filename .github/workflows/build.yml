@@ -2,14 +2,15 @@ name: Build
 on:
   push:
     tags:
-      - "v*.*.*"
+      - 'v*.*.*'
 jobs:
   Build-Upload-Release:
     runs-on: ${{ matrix.os }}
 
     strategy:
-        matrix:
-            os: [ubuntu-latest, windows-latest]
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        vers: ['-pi', '-pi -o', '-n', '-n -o']
 
     steps:
       - uses: actions/setup-python@v3
@@ -18,10 +19,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Build All
         run: |
-          python ${{ github.workspace }}/build.py -pi
-          python ${{ github.workspace }}/build.py -pi -o
-          python ${{ github.workspace }}/build.py -n
-          python ${{ github.workspace }}/build.py -n -o
+          python ${{ github.workspace }}/build.py ${{ matrix.vers }}
 
       - name: Upload
         uses: actions/upload-artifact@v3
@@ -37,4 +35,3 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: ${{ github.workspace }}/op*.zip
-
