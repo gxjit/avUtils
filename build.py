@@ -24,6 +24,9 @@ platformStr = f"{system()}_{machine()}".lower()
 if pargs.nuitka:
     platformStr = f"n_{platformStr}"
 
+if pargs.onefile:
+    platformStr = f"o_{platformStr}"
+
 
 rootPath = Path.cwd()
 appEntry = rootPath.joinpath("optimizeAV.py")
@@ -35,11 +38,18 @@ zipPath = rootPath.joinpath(f"{appEntry.stem}_{platformStr}").with_suffix(".zip"
 
 runP = partial(run, shell=True, check=True)
 
-# runP('sudo apt-get install -y upx')
-# choco install upx
+if pargs.pyinst:
+    if system() == "Linux":
+        runP("sudo apt-get install -y upx")
+    elif system() == "Windows":
+        runP("choco install upx")
 
-# runP("pip install -U --user pyinstaller nuitka")
-# zstandard
+if pargs.pyinst:
+    pipDeps = "pyinstaller"
+elif pargs.nuitka:
+    pipDeps = "nuitka zstandard"
+
+runP(f"pip install -U --user {pipDeps}")
 
 if pargs.pyinst:
     cmd = (
@@ -48,7 +58,7 @@ if pargs.pyinst:
     )
 elif pargs.nuitka:
     cmd = (
-        "nuitka --standalone  --assume-yes-for-downloads "
+        "nuitka --standalone --assume-yes-for-downloads "
         f"--output-dir={buildPath} --remove-output {appEntry}"
     )
 
@@ -67,11 +77,8 @@ if pargs.nuitka and not pargs.onefile:
     buildPath.joinpath(f"{appEntry.stem}.dist").rename(
         buildPath.joinpath(f"{appEntry.stem}")
     )
-# elif pargs.nuitka and pargs.onefile:
-#     buildPath = buildPath
 
 
 make_archive(zipPath.with_suffix(""), "zip", buildPath)
 
 td.cleanup()
-
