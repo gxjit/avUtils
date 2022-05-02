@@ -5,10 +5,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Build All
-        uses: actions/setup-python@v3
+      - uses: actions/setup-python@v3
         with:
           python-version: '3.10'
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
         run: |
           python ${{ github.workspace }}/build.py -pi
           python ${{ github.workspace }}/build.py -pi -o
@@ -16,7 +16,7 @@ jobs:
           python ${{ github.workspace }}/build.py -n -o
 
       - name: Upload
-        uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v3
         with:
           name: build-download
           path: |
