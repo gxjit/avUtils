@@ -38,9 +38,15 @@ zipPath = rootPath.joinpath(f"{appEntry.stem}_{platformStr}").with_suffix(".zip"
 
 runP = partial(run, shell=True, check=True)
 
+
 if pargs.pyinst:
     if system() == "Linux":
-        runP("sudo apt-get install -y upx")
+        if pargs.pyinst:
+            aptDeps = "upx"
+        elif pargs.nuitka:
+            aptDeps = "nuitka upx"
+
+        runP(f"sudo apt-get install -y {aptDeps}")
     elif system() == "Windows":
         runP("choco install upx")
 

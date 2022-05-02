@@ -1,5 +1,8 @@
 name: Build
-on: [push]
+on:
+  push:
+    tags:
+      - "v*.*.*"
 jobs:
   Build:
     runs-on: ubuntu-latest
@@ -12,8 +15,8 @@ jobs:
         run: |
           python ${{ github.workspace }}/build.py -pi
           python ${{ github.workspace }}/build.py -pi -o
-          # python ${{ github.workspace }}/build.py -n
-          # python ${{ github.workspace }}/build.py -n -o
+          python ${{ github.workspace }}/build.py -n
+          python ${{ github.workspace }}/build.py -n -o
 
       - name: Upload
         uses: actions/upload-artifact@v3
@@ -26,6 +29,7 @@ jobs:
 
       - name: Release
         uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
         with:
           files: ${{ github.workspace }}/op*.zip
 
