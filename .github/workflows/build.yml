@@ -23,3 +23,9 @@ jobs:
             ${{ github.workspace }}/op*.zip
           if-no-files-found: error
           retention-days: 30
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ github.workspace }}/op*.zip
+
