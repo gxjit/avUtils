@@ -4,11 +4,11 @@ jobs:
   Build:
     runs-on: ubuntu-latest
     steps:
+      - name: Build All
       - uses: actions/setup-python@v3
         with:
           python-version: '3.10'
       - uses: actions/checkout@v3
-      - name: Build
         run: |
           python ${{ github.workspace }}/build.py -pi
           python ${{ github.workspace }}/build.py -pi -o
