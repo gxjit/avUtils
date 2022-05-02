@@ -6,8 +6,8 @@ jobs:
     steps:
     - name: Build
     - uses: actions/setup-python@v3
-    with:
-      python-version: "3.10"
+      with:
+        python-version: "3.10"
     - uses: actions/checkout@v3
       run: |
         python ${{ github.workspace }}/build.py -pi
