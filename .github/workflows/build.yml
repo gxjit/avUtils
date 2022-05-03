@@ -3,6 +3,11 @@ on:
   push:
     tags:
       - 'v*.*.*'
+
+env:
+  repo: ${{ github.event.repository.name }}
+  ref: ${{ github.ref_name }}
+
 jobs:
   Build-Upload-Release:
     runs-on: ${{ matrix.os }}
@@ -24,7 +29,7 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ github.event.repository.name }}-${{ github.ref_name }}
+          name: ${{ env.repo }}-${{ env.ref }}
           path: |
             ${{ github.workspace }}/dist/*.zip
           if-no-files-found: error
