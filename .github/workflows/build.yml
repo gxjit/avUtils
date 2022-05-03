@@ -24,9 +24,9 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v3
         with:
-          name: build-download
+          name: ${{ github.event.repository.name }}-${{ github.ref_name }}
           path: |
-            ${{ github.workspace }}/op*.zip
+            ${{ github.workspace }}/dist/*.zip
           if-no-files-found: error
           retention-days: 30
 
@@ -34,4 +34,4 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: ${{ github.workspace }}/op*.zip
+          files: ${{ github.workspace }}/dist/*.zip

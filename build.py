@@ -34,7 +34,8 @@ td = TemporaryDirectory(ignore_cleanup_errors=False)
 tempRoot = Path(td.name)
 buildPath = tempRoot.joinpath("build")
 tempPath = tempRoot.joinpath("tmp")
-zipPath = rootPath.joinpath(f"{appEntry.stem}_{platformStr}").with_suffix(".zip")
+distDir = rootPath.joinpath('dist')
+zipPath = distDir.joinpath(f"{appEntry.stem}_{platformStr}").with_suffix(".zip")
 
 runP = partial(run, shell=True, check=True)
 
@@ -86,3 +87,5 @@ if pargs.nuitka and not pargs.onefile:
 make_archive(zipPath.with_suffix(""), "zip", buildPath)
 
 td.cleanup()
+
+# build log
